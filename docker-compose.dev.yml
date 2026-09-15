@@ -1,0 +1,15 @@
+# Startar bara databasen. Applikationen kör vi lokalt med npm run dev.
+# Port 5433 på värden så att den inte krockar med en lokalt installerad Postgres.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: utpost
+      POSTGRES_PASSWORD: utpost
+      POSTGRES_DB: utpost
+    ports:
+      - "5433:5432"
+    volumes:
+      - utpost_pgdata:/var/lib/postgresql/data
+volumes:
+  utpost_pgdata:
