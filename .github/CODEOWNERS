@@ -1,0 +1,8 @@
+# Standardägare för hela repot om inget annat matchar
+*       @Snudde
+
+# API (Express + Postgres/Drizzle)
+/api/   @Snudde
+
+# Web (React + Vite)
+/web/   @Snudde
