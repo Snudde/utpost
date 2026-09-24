@@ -2,11 +2,12 @@
   "name": "utpost",
   "private": true,
   "version": "1.4.2",
-  "workspaces": ["api", "web"],
+  "workspaces": ["api", "web", "client"],
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm run dev --workspace=api\" \"npm run dev --workspace=web\"",
     "dev:api": "npm run dev --workspace=api",
     "dev:web": "npm run dev --workspace=web",
+    "dev:client": "npm run dev --workspace=client",
     "seed": "npm run seed --workspace=api"
   },
   "devDependencies": {
