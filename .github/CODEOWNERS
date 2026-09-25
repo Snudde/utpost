@@ -1,8 +1,8 @@
 # Standardägare för hela repot om inget annat matchar
-*       @Snudde
+*       @Snudde @klingbladet
 
 # API (Express + Postgres/Drizzle)
-/api/   @Snudde
+/api/   @Snudde @klingbladet
 
 # Web (React + Vite)
-/web/   @Snudde
+/web/   @Snudde @klingbladet
