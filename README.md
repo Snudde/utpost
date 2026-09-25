@@ -9,6 +9,8 @@ npm install
 docker compose -f docker-compose.dev.yml up -d
 npm run seed
 npm start
+npm run client - Kör igång både api och frontend för client
+npm run dev - Kör igång både api och frontend för web
 ```
 
 Appen ligger sen på http://localhost:3000 och API:et pa http://localhost:4000.
@@ -17,10 +19,19 @@ Appen ligger sen på http://localhost:3000 och API:et pa http://localhost:4000.
 
 - `api/` – Express + Postgres (Drizzle)
 - `web/` – React + Vite
+- `client/` - Vue + Vite
+
+## CI/CD Pipeline
+
+Projektet använder GitHub Actions (`main-protection`) för automatisk validering vid push och PR mot `main`:
+
+* **Miljö:** Node.js 22 (Ubuntu)
+* **Steg:**
+  1. Kodkontroll (`npm run lint` & `npm run format:check`)
+  2. Tester (`npm test`)
+  3. Bygge (`npm run build`)
 
 ## Deploy
-
-Fråga Marcus.
 
 ## Branchstrategi
 
