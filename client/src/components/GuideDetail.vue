@@ -4,7 +4,6 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const guide = ref(null)
-const test = ref('test')
 
 watch(
   () => route.params.slug,
