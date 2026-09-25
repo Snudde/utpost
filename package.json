@@ -14,6 +14,7 @@
     "seed": "npm run seed --workspace=api",
     "dev:client": "npm run dev --workspace=client",
     "lint": "npm run lint --workspace=client",
+    "format": "npm run format --workspace=client",
     "format:check": "npm run format:check --workspace=client",
     "test": "npm run test --workspace=client",
     "build": "npm run build --workspace=client"
