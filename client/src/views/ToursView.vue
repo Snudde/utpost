@@ -3,6 +3,6 @@
 
 <template>
   <main>
-    <h1>Startsida</h1>
+    <h1>Turer</h1>
   </main>
 </template>
