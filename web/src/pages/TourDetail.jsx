@@ -8,7 +8,7 @@ const TourDetail = () => {
   useEffect(() => {
     fetch(`http://localhost:4000/api/tours/${id}`)
       .then((r) => r.json())
-      .then(setTour);
+      .then(setTour)
   }, [id]);
 
   if (!tour) return <p>Laddar...</p>;
