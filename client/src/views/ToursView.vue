@@ -1,6 +1,7 @@
 <script setup>
   import { ref, onMounted } from 'vue'
   import { RouterLink } from 'vue-router';
+  import { get } from '@/api'
 
   const tours = ref([])
   const loading = ref(true)
