@@ -19,32 +19,39 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main>
-    <h1>Turer</h1>
-    <p v-if="loading">Laddar turer...</p>
-    <table v-else class="tours">
-      <thead>
-        <tr class="flex-center">
-          <th>Tur</th>
-          <th>Av</th>
-          <th>Guide</th>
-          <th>Längd</th>
-          <th>Bilder</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="t in tours" :key="t.id">
-          <td>
-            <RouterLink :to="`/turer/${t.id}`">
-              {{ t.title }}
-            </RouterLink>
-          </td>
-          <td>{{ t.user?.display_name }}</td>
-          <td>{{ t.guide?.title ?? '-' }}</td>
-          <td>{{ Math.round(t.distance_m / 100) / 10 }} km</td>
-          <td>{{ t.photos?.length ?? 0 }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </main>
+  <h1 class="green">Turer</h1>
+  <p v-if="loading">Laddar turer...</p>
+  <table v-else class="tours">
+    <thead>
+      <tr class="flex-center">
+        <th>Tur</th>
+        <th>Av</th>
+        <th>Guide</th>
+        <th>Längd</th>
+        <th>Bilder</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="t in tours" :key="t.id">
+        <td>
+          <RouterLink :to="`/turer/${t.id}`">
+            {{ t.title }}
+          </RouterLink>
+        </td>
+        <td>{{ t.user?.display_name }}</td>
+        <td>{{ t.guide?.title ?? '-' }}</td>
+        <td>{{ Math.round(t.distance_m / 100) / 10 }} km</td>
+        <td>{{ t.photos?.length ?? 0 }}</td>
+      </tr>
+    </tbody>
+  </table>
 </template>
+
+<style scoped>
+h1 {
+  font-weight: 500;
+  font-size: 2.6rem;
+  position: relative;
+  top: -10px;
+}
+</style>
