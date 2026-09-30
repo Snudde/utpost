@@ -34,22 +34,20 @@ const filteredGuides = computed(() => {
 </script>
 
 <template>
-  <div class="greetings">
-    <h1 class="green">Guides</h1>
+  <h1 class="green">Guider</h1>
 
-    <p v-if="isLoading">Laddar guider…</p>
-    <p v-else-if="error" class="error">Något gick fel: {{ error }}</p>
-    <template v-else>
-      <div class="searchrow">
-        <input v-model="query" placeholder="Sök på namn eller landskap" />
-      </div>
-      <p class="hit-count">{{ filteredGuides.length }} av {{ guides.length }}</p>
-      <p v-if="filteredGuides.length === 0">Inga guider hittades.</p>
-      <div v-else class="grid">
-        <GuideCard v-for="g in filteredGuides" :key="g.id" :guide="g" />
-      </div>
-    </template>
-  </div>
+  <p v-if="isLoading">Laddar guider…</p>
+  <p v-else-if="error" class="error">Något gick fel: {{ error }}</p>
+  <template v-else>
+    <div class="searchrow">
+      <input v-model="query" placeholder="Sök på namn eller landskap" />
+    </div>
+    <p class="hit-count">{{ filteredGuides.length }} av {{ guides.length }}</p>
+    <p v-if="filteredGuides.length === 0">Inga guider hittades.</p>
+    <div v-else class="grid">
+      <GuideCard v-for="g in filteredGuides" :key="g.id" :guide="g" />
+    </div>
+  </template>
 </template>
 
 <style scoped>

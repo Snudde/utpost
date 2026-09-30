@@ -24,6 +24,11 @@ const router = createRouter({
       name: 'tours',
       component: () => import('../views/ToursView.vue'),
     },
+    {
+      path: '/turer/:id',
+      name: 'tour-detail',
+      component: () => import('../views/ToursDetailView.vue'),
+    },
   ],
 })
 
