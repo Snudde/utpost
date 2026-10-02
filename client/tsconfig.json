@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "types": ["vite/client"],
     "paths": {
+      "@utpost/shared": ["../shared/src/index.ts"],
       "@/*": ["./src/*"]
     }
   },
