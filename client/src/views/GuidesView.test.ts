@@ -71,10 +71,7 @@ describe('GuidesView', () => {
     const user = userEvent.setup()
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: () =>
-        Promise.resolve([
-          guide({ title: 'Fjällvandring i Sarek', region: 'Norrland' }),
-        ]),
+      json: () => Promise.resolve([guide({ title: 'Fjällvandring i Sarek', region: 'Norrland' })]),
     } as Response)
 
     renderView()
