@@ -37,10 +37,10 @@ const filteredGuides = computed(() => {
   <h1 class="green">Guider</h1>
 
   <p v-if="isLoading">Laddar guider…</p>
-  <p v-else-if="error" class="error">Något gick fel: {{ error }}</p>
+  <p v-else-if="error" role="alert" class="error">Något gick fel: {{ error }}</p>
   <template v-else>
     <div class="searchrow">
-      <input v-model="query" placeholder="Sök på namn eller landskap" />
+      <input v-model="query" aria-label="Sök" placeholder="Sök på namn eller landskap" />
     </div>
     <p class="hit-count">{{ filteredGuides.length }} av {{ guides.length }}</p>
     <p v-if="filteredGuides.length === 0">Inga guider hittades.</p>
