@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, type Request, Response } from 'express';
 import { pool } from '../db/client.js';
 import { sign } from '../lib/auth.js';
 
 export const authRouter = Router();
 
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const result = await pool.query('select * from users where email = $1', [email]);
   const user = result.rows[0];
@@ -15,7 +15,7 @@ authRouter.post('/login', async (req, res) => {
   res.json({ token: sign(user), user });
 });
 
-authRouter.post('/register', async (req, res) => {
+authRouter.post('/register', async (req: Request, res: Response) => {
   const { email, password, displayName } = req.body;
   const result = await pool.query(
     'insert into users (email, password_hash, display_name) values ($1,$2,$3) returning *',
