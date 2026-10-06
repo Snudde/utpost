@@ -92,3 +92,11 @@ export interface LoginResponse {
 export interface ApiError {
   error: string
 }
+
+export interface RegisterRequest {
+  email: string
+  password: string
+  displayName: string
+}
+
+export type RegisterResponse = LoginResponse
