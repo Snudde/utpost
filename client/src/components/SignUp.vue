@@ -10,11 +10,11 @@ const displayName = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const errorMessage = ref('')
+const errorMessage = ref<String | null>(null)
 const isLoading = ref(false)
 
 async function handleSubmit() {
-  errorMessage.value = ''
+  errorMessage.value = null
   // Enkel validering innan vi anropar servern
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Lösenorden matchar inte.'
@@ -61,7 +61,7 @@ async function handleSubmit() {
     <p v-if="errorMessage" class="error" role="alert">
       {{ errorMessage }}
     </p>
-    <button type="submit" class="button-blue" :disabled="isLoading">
+    <button type="submit" class="button-green" :disabled="isLoading">
       {{ isLoading ? 'Skapar konto...' : 'Registrera dig' }}
     </button>
   </form>
@@ -75,6 +75,7 @@ async function handleSubmit() {
   max-width: 360px;
   margin: 0 auto;
   background: #fff;
+  color: black;
   padding: 24px;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -98,17 +99,17 @@ async function handleSubmit() {
   margin: 4px 0;
   font-size: 14px;
 }
-.button-blue {
+.button-green {
   margin-top: 8px;
-  background: #3d7dff;
-  color: #fff;
-  border: 1px solid #3d7dff;
+  background: hsla(160, 100%, 37%, 1);
+  color: black;
+  border: none;
   padding: 9px 16px;
   cursor: pointer;
   border-radius: 3px;
   font-weight: 600;
 }
-.button-blue:disabled {
+.button-green:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
