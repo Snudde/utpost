@@ -43,7 +43,7 @@ async function handleSubmit() {
     <p v-if="errorMessage" class="error" role="alert">
       {{ errorMessage }}
     </p>
-    <button type="submit" class="button-blue" :disabled="isLoading">
+    <button type="submit" class="button-green" :disabled="isLoading">
       {{ isLoading ? 'Loggar in...' : 'Logga in' }}
     </button>
   </form>
@@ -81,7 +81,7 @@ async function handleSubmit() {
   margin: 4px 0;
   font-size: 14px;
 }
-.button-blue {
+.button-green {
   margin-top: 8px;
   background: hsla(160, 100%, 37%, 1);
   color: black;
@@ -91,9 +91,8 @@ async function handleSubmit() {
   border-radius: 3px;
   font-weight: 600;
 }
-.button-blue:disabled {
+.button-green:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 </style>
-

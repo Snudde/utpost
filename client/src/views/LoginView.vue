@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import SignIn from '@/components/SignIn.vue'
-import SignUp from '@/components/SignUp.vue';
-
+import SignUp from '@/components/SignUp.vue'
 
 const isSignUp = ref(false)
-
 </script>
 <template>
   <main class="login-view">
@@ -15,15 +13,11 @@ const isSignUp = ref(false)
 
       <p class="toggle-text">
         <span v-if="isSignUp">
-          <button type="button" class="link-btn" @click="isSignUp = false">
-            Logga in här
-          </button>
+          <button type="button" class="link-btn" @click="isSignUp = false">Logga in här</button>
         </span>
         <span v-else>
-            Har du inget konto?
-            <button type="button" class="link-btn" @click="isSignUp = true">
-              Skapa konto här
-            </button>
+          Har du inget konto?
+          <button type="button" class="link-btn" @click="isSignUp = true">Skapa konto här</button>
         </span>
       </p>
     </div>
@@ -34,7 +28,7 @@ const isSignUp = ref(false)
   padding: 40px 20px;
   display: flex;
   justify-content: center;
-  color: #ebebeba3
+  color: #ebebeba3;
 }
 .container {
   display: flex;
