@@ -1,20 +1,20 @@
-import { Router, type Response, Request } from 'express';
+import { Router, type Response, type Request } from 'express';
 import { pool } from '../db/client.js';
-import { Guides } from '../../../shared/src/index.ts';
+import type { Guide } from '../../../shared/src/index.ts';
 
 export const guidesRouter = Router();
 
-guidesRouter.get('/', async (res: Response) => {
+guidesRouter.get('/', async (req: Request, res: Response) => {
   const result = await pool.query('select * from guides order by updated_at desc');
   res.json(result.rows);
 });
 
-guidesRouter.get('/regions', async (res: Response) => {
+guidesRouter.get('/regions', async (req: Request, res: Response) => {
   const result = await pool.query('select distinct region from guides order by region');
-  res.json(result.rows.map((r: Guides) => r.region));
+  res.json(result.rows.map((r: Guide) => r.region));
 });
 
-guidesRouter.get('/popular', async (res: Response) => {
+guidesRouter.get('/popular', async (req: Request, res: Response) => {
   const result = await pool.query('select * from guides where published = true order by id desc limit 6');
   res.json(result.rows);
 });

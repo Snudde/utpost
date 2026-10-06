@@ -1,4 +1,4 @@
-import { Router, type Request, Response } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { pool } from '../db/client.js';
 import { sign } from '../lib/auth.js';
 
