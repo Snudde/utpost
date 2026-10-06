@@ -8,8 +8,7 @@ Vi testar logik med enhetstester och användarflöden i klienten med komponentte
 och måste vara gröna innan merge till main.
 
 ## Bakgrund
-Klienten byggs om i Vue (client/) och ersätter React-klienten (web/). Vi vill kunna
-ändra koden utan att gamla buggar kommer tillbaka – t.ex. höjdberäkningen som räknade
+Klienten byggs om i Vue (client/) och ersätter React-klienten (web/). Vi vill kunna ändra koden utan att gamla buggar kommer tillbaka – t.ex. höjdberäkningen som räknade
 mätpunkter utan höjd som havsnivå (docs/debt.md).
 
 ## Nivåer
@@ -37,27 +36,29 @@ mätpunkter utan höjd som havsnivå (docs/debt.md).
 ## Regler
 - **Merge:** *En PR får mergas till main när CI-jobbet build (lint, format, typecheck, test, build) är grönt och minst en teammedlem har godkänt den. Det upprätthålls av rulesetet main-protection.*
 - **Buggfix:** *kräver ett test som är rött före fixen och grönt efter.*
-- **Mocka API:et:** *vi.stubGlobal('fetch', …) i testet. Mockdata typas med typerna i
-  shared/ så att den inte kan glida isär från verkligheten.*
-- **Täckningskrav:** *Nej/Ja – och varför.*
-- **Meningsfullt test:** *ett test ska bli rött om buggen det skyddar mot kommer tillbaka.
-  Vi kontrollerar det genom att ta sönder koden med flit när testet skrivs.*
+- **Mocka API:et:** *vi.stubGlobal('fetch', …) i testet. Mockdata typas med typerna i shared/ så att den inte kan glida isär från verkligheten.*
+- **Täckningskrav:** *Inget procentuellt täckningskrav (t.ex. 80 %). Procentmått premierar ofta meningslösa tester av getters/boilerplate framför tester av komplex logik och kritiska användarflöden. Vi fokuserar i stället på att alla riskabla beräkningar och centrala användarinteraktioner är täckta.*
+- **Meningsfullt test:** *Ett test ska bli rött om buggen det skyddar mot kommer tillbaka. Vi kontrollerar det genom att ta sönder koden med flit när testet skrivs.*
 
 ## Medvetet inte
-- *API:et (api/) – varför inte nu, och när det ändras.*
-- *E2E – varför inte nu.*
+- *API:et (api/) – Testas inte i detta skede då backend är relativt stabil och fokus ligger helt på migrationen till Vue-klienten. Integrations- eller kontraktstester för API:et införs när klientomskrivningen är driftsatt eller om backend-logiken byggs ut väsentligt.*
 - *web/ – ska ersättas av client/.*
 - *Routerns konfiguration och Vues egna funktioner – det testar Vue-teamet.*
-- *CSS och utseende.*
+- *CSS och utseende - Visuella regressionstester är för sköra och underhållstunga i tidiga migrationsfaser. Vi verifierar tillgängliga element, texter och interaktioner via DOM-strukturen.*
 
 ## Alternativ vi jämförde
-| Alternativ | Varför inte (än) |
+| Alternativ | Varför inte (än) | 
 |---|---|
-| Vue Test Utils i stället för Testing Library | *…* |
-| MSW (Mock Service Worker) i stället för att stubba fetch | *…* |
-| E2E med Playwright i stället för komponenttester | *…* |
-| Täckningskrav, t.ex. 80 % | *…* |
+| Vue Test Utils i stället för Testing Library | Testar lätt intern implementation (vm, props). Testing Library tvingar fram refaktoreringssäkra tester ur användarens perspektiv. |
+| MSW (Mock Service Worker) i stället för att stubba fetch | Onödig boilerplate och extra beroenden just nu. vi.stubGlobal('fetch', …) ihop med typer från shared/ räcker. |
+| E2E med Playwright i stället för komponenttester | För långsamt i CI och skört under aktiv omskrivning. Vitest + jsdom ger omedelbar feedback lokalt |
+| Täckningskrav, t.ex. 80 % | Leder till meningslösa "gröna" tester för att jaga siffror. Vi prioriterar att testa rätt saker framför procent. |
 
 ## Konsekvenser
-- **Bra:** *…*
-- **Dåligt / risker vi accepterar:** *API:et kan gå sönder utan att någon test blir rött.*
+- **Bra:**
+  - Extremt snabb testsvit i CI och lokalt tack vare Vitest och jsdom.
+  - Hög refaktoreringssäkerhet i `client/` då komponenttester baseras på användarbeteende, inte implementationsdetaljer.
+  - Delade TypeScript-typer i `shared/` säkerställer att frontend-mockarna förblir i synk med förväntade datamodeller.
+- **Dåligt / risker vi accepterar:**
+  - API:et kan gå sönder utan att något test blir rött (eftersom fetch mockas och backend saknar full täckning).
+  - Webbläsarspecifika rendering- eller layoutbuggar fångas inte i jsdom.

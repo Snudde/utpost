@@ -20,3 +20,7 @@ efter vad som stör oss mest när vi läser koden.
 | 8 | N+1-queries i turlistan | api/src/routes/tours.js:7-22 | Loop med await gör 4 sekventiella queries per tur istället för en join. Bromsar allt vid skalning. | Medel | [#22](https://github.com/Snudde/utpost/issues/22) |
 | 9 | Fel sväljs globalt istället för att hanteras per route | api/src/index.js:25-29 | unhandledRejection loggar bara felet, routes saknar try/catch. Requests hänger tyst istället för att svara med felkod. | Medel | [#23](https://github.com/Snudde/utpost/issues/23) |
 | 10 | Duplicerad, oanvänd komponent | web/src/components/PrimaryButton.jsx | Klassbaserad kopia av Button.jsx, importeras aldrig. Skapar osäkerhet om vilken komponent som gäller. | Låg | [#24](https://github.com/Snudde/utpost/issues/24) |
+
+| 11 | Mätpunkter utan höjd räknas som havsnivå | client/src/lib/tours.ts:3-8 | Saknat höjdvärde (`null`) räknas som 0 (havsnivå), vilket skapar falska, enorma höjdskillnader vid tillfälligt tappad GPS-signal. | Medel | [#25](https://github.com/Snudde/utpost/issues/25) |
+
+
