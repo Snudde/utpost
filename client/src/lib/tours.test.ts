@@ -21,7 +21,16 @@ describe('elevationGain', () => {
     expect(elevationGain([])).toBe(0)
   })
   // Regressionstest – skuld ur docs/debt.md: en mätpunkt utan höjd räknas som havsnivå
-  it('hoppar över mätpunkter utan höjd i stället för att räkna dem som noll', () => {
+  it('mätpunkter utan höjd räknas inte som noll', () => {
     expect(elevationGain([log(100), log(null), log(150)])).toBe(50)
+  })
+  it('räknar inte nedförsbackar som stigning', () => {
+    expect(elevationGain([log(100), log(90), log(80)])).toBe(0)
+  })
+  it('ger 0 för en tur med bara en mätpunkt', () => {
+    expect(elevationGain([log(100)])).toBe(0)
+  })
+  it('hoppar över en första mätpunkt utan höjd', () => {
+    expect(elevationGain([log(null), log(100), log(150)])).toBe(50)
   })
 })
