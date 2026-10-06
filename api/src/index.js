@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
-import { authRouter } from './routes/auth.js';
-import { guidesRouter } from './routes/guides.js';
+import { authRouter } from './routes/auth.ts';
+import { guidesRouter } from './routes/guides.ts';
 import { toursRouter } from './routes/tours.js';
 import { photosRouter } from './routes/photos.js';
 
