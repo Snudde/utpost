@@ -1,4 +1,4 @@
-import type { LoginRequest, LoginResponse, User, ApiError } from "@utpost/shared";
+import type { LoginRequest, LoginResponse, RegisterRequest, User, ApiError } from "@utpost/shared";
 import { defineStore } from "pinia"
 import { ref, computed } from 'vue'
 import { post } from "@/api";
@@ -29,6 +29,17 @@ export const useAuthStore = defineStore('session', () => {
         localStorage.setItem('user', JSON.stringify(data.user))
     }
 
+    async function register(credentials: RegisterRequest): Promise<void> {
+        const data = await post<LoginResponse | ApiError>('/auth/register', credentials)
+        if ('error' in data) {
+            throw new Error(data.error)
+        }
+        user.value = data.user
+        token.value = data.token
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+    }
+
       function logout(): void {
         // Nollställ state
         user.value = null
@@ -43,6 +54,7 @@ export const useAuthStore = defineStore('session', () => {
         token,
         isAuthenticated,
         login,
+        register,
         logout,
     }
 });

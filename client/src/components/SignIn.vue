@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session'
 
+
 const router = useRouter()
 const user = ref('')
 const password = ref('')
