@@ -3,9 +3,19 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { post } from '@/api'
 
+function getStoredUser(): User | null {
+  const stored = localStorage.getItem('user')
+  if (!stored) return null
+  try {
+    return JSON.parse(stored) as User
+  } catch {
+    return null
+  }
+}
+
 export const useAuthStore = defineStore('session', () => {
   // State
-  const user = ref<User | null>()
+  const user = ref<User | null>(getStoredUser())
   const token = ref<string | null>(localStorage.getItem('token'))
 
   // Getter
