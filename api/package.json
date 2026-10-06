@@ -7,7 +7,8 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "seed": "node src/db/seed.js",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -17,6 +18,8 @@
     "pg": "^8.13.1"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "supertest": "^7.3.1",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
   }
 }
