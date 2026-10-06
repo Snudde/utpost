@@ -75,6 +75,7 @@ async function handleSubmit() {
   max-width: 360px;
   margin: 0 auto;
   background: #fff;
+  color: black;
   padding: 24px;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -100,9 +101,9 @@ async function handleSubmit() {
 }
 .button-blue {
   margin-top: 8px;
-  background: #3d7dff;
-  color: #fff;
-  border: 1px solid #3d7dff;
+  background: hsla(160, 100%, 37%, 1);
+  color: black;
+  border: none;
   padding: 9px 16px;
   cursor: pointer;
   border-radius: 3px;
