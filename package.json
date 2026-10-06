@@ -19,6 +19,7 @@
     "format:check": "npm run format:check --workspace=client",
     "test": "npm run test --workspace=client",
     "build": "npm run build --workspace=client",
+    "typecheck": "npm run typecheck:api && npm run typecheck:client",
     "typecheck:api": "npm run typecheck --workspace=api",
     "typecheck:client": "npm run typecheck --workspace=client"
   },
