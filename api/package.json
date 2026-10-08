@@ -8,13 +8,15 @@
     "start": "node src/index.js",
     "seed": "node src/db/seed.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "mongo:smoke": "node src/db/mongo-smoke.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "drizzle-orm": "^0.36.4",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.21.0",
     "pg": "^8.13.1"
   },
   "devDependencies": {

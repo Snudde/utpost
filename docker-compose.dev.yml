@@ -1,5 +1,5 @@
-# Startar bara databasen. Applikationen kör vi lokalt med npm run dev.
-# Port 5433 på värden så att den inte krockar med en lokalt installerad Postgres.
+# Startar bara databaserna. Applikationen kör vi lokalt med npm run dev.
+# Portarna på värden (5433, 27017) matchar standardvärdena i api/src/config.js.
 services:
   db:
     image: postgres:16
@@ -11,5 +11,15 @@ services:
       - "5433:5432"
     volumes:
       - utpost_pgdata:/var/lib/postgresql/data
+  mongo:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: utpost
+      MONGO_INITDB_ROOT_PASSWORD: utpost
+    ports:
+      - "27017:27017"
+    volumes:
+      - utpost_mongodata:/data/db
 volumes:
   utpost_pgdata:
+  utpost_mongodata:
