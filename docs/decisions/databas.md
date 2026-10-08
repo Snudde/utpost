@@ -104,9 +104,23 @@ Index:
    - När MongoDB bevisats stabil i drift körs en migrering med `DROP TABLE tour_logs;` för att frigöra databasutrymme och förenkla Postgres-backuper.
 
 ## Alternativ vi jämförde
-*(Minst två: t.ex. behålla allt i Postgres men med `jsonb`-kolumn för loggarna · allt till MongoDB · MongoDB för loggarna, Postgres för resten. För varje: vad talar för, vad talar emot.)*
+*
+1. **PostgreSQL:** 
+   - Ha enbart en SQL-databas (PostgreSQL) för att lagra all data från hemsidan. Problemet är att `turer` kan vara stora dokument med hundratals rader. För att visa en tur
+    krävs då stora och komplexa `JOIN`-operationer, vilket kan leda till prestandaproblem och exempelvis teknisk skuld **#8 (N+1 queries)**.
+
+2. **PostgreSQL + MongoDB:** 
+   - Använd PostgreSQL för den största delen av datan, men lagra schemat `turer` i MongoDB. Eftersom en hel tur kan sparas som ett stort dokument i MongoDB slipper vi de tunga `JOIN`-operationerna i PostgreSQL och kan samtidigt undvika teknisk skuld **#8 (N+1 queries)**.
+*
 
 ## Konsekvenser
-*(Två databaser att drifta och backa upp. Två anslutningssträngar i miljön. Vad kräver det av compose, av pipelinen, av molnet i M6?)*
+*
+- Att använda både PostgreSQL och MongoDB innebär mer komplexitet i systemet. Vi behöver exempelvis hantera två anslutningssträngar i miljön, en för varje databas.
+- docker-compose behöver konfigureras för att starta och koppla upp mot båda databaserna. 
+- Pipelinen behöver kunna hantera installation, konfiguration och eventuella migreringar för två separata databaser. 
+- I molnmiljön behöver vi dessutom hantera två databasinstanser, vilket kan innebära mer konfiguration, api koppling/kontohantering. 
 
-**Skrivet av:** *(namn – den som signerar ska kunna försvara det)*
+-Allt detta gör databas kompligen mer komplex jämfört med att endast använda PostgreSQL, men om den hjälper med datahantering med turer så får vi göra det.
+*
+
+**Skrivet av:** *Oskar/Benjamin/Kalle*
