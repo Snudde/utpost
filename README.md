@@ -2,18 +2,57 @@
 
 Plattform för friluftsdestinationer. Redaktionella guider, användarnas egna turer och bilder.
 
+## Förutsättningar
+- [Node.js](https://nodejs.org/) v22 eller senare
+- [Docker & Docker Desktop](https://www.docker.com/) igång
+
 ## Kom igång
 
-```bash
-npm install
-docker compose -f docker-compose.dev.yml up -d
-npm run seed
-npm start
-npm run client - Kör igång både api och frontend för client
-npm run dev - Kör igång både api och frontend för web
-```
+1. **Installera beroenden:**
+   ```bash
+   npm install
+   ```
+2. **Starta databaserna i Docker:**
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d
+   ```
+3. **Skapa tabeller och seeda data (PostgreSQL):**
+   ```bash
+   npm run seed
+   ```
+4. **Starta applikationen (välj frontend):**
+   - För **React**-appen (`web`) + API:
+     ```bash
+     npm run dev
+     ```
+     *Webb: http://localhost:3000 | API: http://localhost:4000*
+   - För **Vue**-klienten (`client`) + API:
+     ```bash
+     npm run client
+     ```
+     *Klient: http://localhost:3001 | API: http://localhost:4000*
 
-Appen ligger sen på http://localhost:3000 och API:et pa http://localhost:4000.
+## Databaser & Docker
+Projektet använder en **hybridarkitektur (polyglot persistence)** med två databaser:
+| Databas | Port på värd | Databasnamn | Användare / Lösen | Användningsområde |
+|---|---|---|---|---|
+| **PostgreSQL 16** | `5433` | `utpost` | `utpost` / `utpost` | Användare, guider, foton (relationsdata & integritet) |
+| **MongoDB 8** | `27017` | `utpost` | `utpost` / `utpost` | Turer & inbäddade GPS-loggar (dokumentmodell) |
+> Se arkitekturbeslut i [docs/decisions/databas.md](docs/decisions/databas.md).
+
+### Docker-kommandon
+- **Stoppa databaserna:**
+  ```bash
+  docker compose -f docker-compose.dev.yml down
+  ```
+- **Nollställ databaserna (raderar volymer och all data):**
+  ```bash
+  docker compose -f docker-compose.dev.yml down -v
+  ```
+- **Kontrollera containerstatus:**
+  ```bash
+  docker compose -f docker-compose.dev.yml ps
+  ```
 
 ## Struktur
 
