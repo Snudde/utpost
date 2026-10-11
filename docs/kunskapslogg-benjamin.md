@@ -58,6 +58,22 @@ Omvandlat filer från js till typescript i både backend och frontend och hanter
 
 Bli bättre på att hantera typer och förstå dess användning i backend. Vill få en djupare förståelse för hur man kan använda en store i flera scenarion. Djupare förståelse för regressionstester. 
 
+## M3 Vecka 41 – NoSQL och containrar
+
+**Kursmål:** Fullstack 1, 10 och 19, Cloude 4 och 7
+
+### Vad jag förstått
+
+**Fullstack1 1, 10 och 19:** Grundläggande förståelse för noSQL databaser och dess syfte. Fördelar och nackdelar med SQL respektive noSQL.
+
+**Cloude 4 och 7:** Lärt mig om docker och hela kedjan, dockerfile - docker-compose. Syftet med docker-compose och att starta flera containrar samtidigt. Problematiken med utvecklingsmiljö där alla kör lokalt (olika paket). 
+
+### Var det syns i mitt arbete
+
+**Branches jag jobbat i:** "document-model, docker-guide-readme"
+
+### Kvar att förstå
+
 
 
 
