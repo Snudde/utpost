@@ -2,14 +2,32 @@
   "name": "utpost",
   "private": true,
   "version": "1.4.2",
-  "workspaces": ["api", "web"],
+  "workspaces": [
+    "api",
+    "web",
+    "client"
+  ],
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm run dev --workspace=api\" \"npm run dev --workspace=web\"",
+    "client": "concurrently -n api,web -c blue,green \"npm run dev --workspace=api\" \"npm run dev --workspace=client\"",
     "dev:api": "npm run dev --workspace=api",
     "dev:web": "npm run dev --workspace=web",
-    "seed": "npm run seed --workspace=api"
+    "seed": "npm run seed --workspace=api",
+    "dev:client": "npm run dev --workspace=client",
+    "lint": "npm run lint --workspace=client",
+    "format": "npm run format --workspace=client",
+    "format:check": "npm run format:check --workspace=client",
+    "test": "npm run test --workspace=client",
+    "build": "npm run build --workspace=client",
+    "typecheck": "npm run typecheck:api && npm run typecheck:client",
+    "typecheck:api": "npm run typecheck --workspace=api",
+    "typecheck:client": "npm run typecheck --workspace=client"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }
