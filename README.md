@@ -8,19 +8,32 @@ Plattform för friluftsdestinationer. Redaktionella guider, användarnas egna tu
 
 ## Kom igång
 
+### 1. Kör allt i Docker
+
+1. **Starta och bygg alla containrar:**
+    ```bash
+    docker compose up --build -d
+    ```
+2. **Skapa tabeller och seeda data:**
+    ```bash
+    docker compose exec api npm run seed
+    ```
+  *Klient: http://localhost:3001 | API: http://localhost:4000*
+
+### 2. Lokal utveckling
 1. **Installera beroenden:**
    ```bash
    npm install
    ```
-2. **Starta databaserna i Docker:**
+2. **Starta enbart databaserna i Docker:**
    ```bash
-   docker compose -f docker-compose.dev.yml up -d
+   docker compose up -d postgres mongo
    ```
-3. **Skapa tabeller och seeda data (PostgreSQL):**
+3. **Skapa tabeller och seeda data i databaser:**
    ```bash
    npm run seed
    ```
-4. **Starta applikationen (välj frontend):**
+4. **Starta applikationen lokalt:**
    - För **React**-appen (`web`) + API:
      ```bash
      npm run dev
@@ -41,24 +54,32 @@ Projektet använder en **hybridarkitektur (polyglot persistence)** med två data
 > Se arkitekturbeslut i [docs/decisions/databas.md](docs/decisions/databas.md).
 
 ### Docker-kommandon
-- **Stoppa databaserna:**
+- **Stoppa alla containrar:**
   ```bash
-  docker compose -f docker-compose.dev.yml down
+  docker compose down
   ```
 - **Nollställ databaserna (raderar volymer och all data):**
   ```bash
-  docker compose -f docker-compose.dev.yml down -v
+  docker compose down -v
   ```
 - **Kontrollera containerstatus:**
   ```bash
-  docker compose -f docker-compose.dev.yml ps
+  docker compose ps
   ```
+- **Se loggar:**
+  ```bash
+  docker compose logs -f
+  ```
+
 
 ## Struktur
 
 - `api/` – Express + Postgres (Drizzle)
 - `web/` – React + Vite
 - `client/` - Vue + Vite
+- `shared/` - Delade TypeScript-typer / API-kontrakt (@utpost/shared)
+- `compose.yml` – Docker Compose-konfiguration för hela stacken
+
 
 ## CI/CD Pipeline
 
