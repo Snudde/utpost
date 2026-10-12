@@ -5,7 +5,8 @@
   "workspaces": [
     "api",
     "web",
-    "client"
+    "client",
+    "shared"
   ],
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm run dev --workspace=api\" \"npm run dev --workspace=web\"",
