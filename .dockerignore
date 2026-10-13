@@ -1,0 +1,8 @@
+# Skickas inte till Docker vid docker build. Utan den här filen följer node_modules
+# (byggd för din dator, inte för Linux) och hela git-historiken med in i byggkontexten.
+**/node_modules
+**/dist
+.git
+web
+uploads
+.env
