@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { gql } from '../graphql'
+import type { GuideSummary, HomeData } from '@utpost/shared'
 
 // Startsidan i React-klienten (web/src/pages/Home.jsx) gör fem REST-anrop och använder
 // en bråkdel av svaren – skuld 6. Här är samma sida med EN fråga som ber om exakt de fält
@@ -27,20 +28,6 @@ const HOME_QUERY = /* GraphQL */ `
     }
   }
 `
-
-interface GuideSummary {
-  slug: string
-  title: string
-  region: string
-  difficulty: string
-  lengthKm: number
-}
-interface HomeData {
-  guides: GuideSummary[]
-  popularGuides: Pick<GuideSummary, 'slug' | 'title' | 'region'>[]
-  regions: string[]
-  tours: { id: string; title: string; distanceM: number }[]
-}
 
 const data = ref<HomeData | null>(null)
 const error = ref<string | null>(null)
