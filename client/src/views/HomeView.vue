@@ -36,7 +36,7 @@ onMounted(async () => {
   try {
     data.value = await gql<HomeData>(HOME_QUERY)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = err instanceof Error ? err.message : String(err)
   }
 })
 </script>
