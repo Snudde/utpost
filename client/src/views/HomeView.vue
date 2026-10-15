@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { HomeData } from '@utpost/shared'
 import { ref, onMounted } from 'vue'
 import { gql } from '../graphql'
-import type { GuideSummary, HomeData } from '@utpost/shared'
 
 // Startsidan i React-klienten (web/src/pages/Home.jsx) gör fem REST-anrop och använder
 // en bråkdel av svaren – skuld 6. Här är samma sida med EN fråga som ber om exakt de fält
@@ -30,13 +30,13 @@ const HOME_QUERY = /* GraphQL */ `
 `
 
 const data = ref<HomeData | null>(null)
-const error = ref<string | null>(null)
+const error = ref<String | null>(null)
 
 onMounted(async () => {
   try {
     data.value = await gql<HomeData>(HOME_QUERY)
   } catch (err) {
-    error.value = (err as Error).message
+    error.value = err instanceof Error ? err.message : String(err);
   }
 })
 </script>
