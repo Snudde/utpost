@@ -10,6 +10,7 @@ import { mongo } from './db/mongo.js';
 export const app = express();
 
 app.use(cors());
+app.use(yoga.graphqlEndpoint, yoga);
 app.use(express.json({ limit: '50mb' }));
 
 // Svarar med om databaserna nås. Compose och molnet frågar hit för att veta om API:et lever.
