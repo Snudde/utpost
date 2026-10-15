@@ -4,12 +4,14 @@ import { authRouter } from './routes/auth.ts';
 import { guidesRouter } from './routes/guides.ts';
 import { toursRouter } from './routes/tours.js';
 import { photosRouter } from './routes/photos.js';
+import { yoga } from './graphql/server.js';
 import { pool } from './db/client.js';
 import { mongo } from './db/mongo.js';
 
 export const app = express();
 
 app.use(cors());
+app.use(yoga.graphqlEndpoint, yoga);
 app.use(express.json({ limit: '50mb' }));
 
 // Svarar med om databaserna nås. Compose och molnet frågar hit för att veta om API:et lever.

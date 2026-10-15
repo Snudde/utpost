@@ -100,3 +100,18 @@ export interface RegisterRequest {
 }
 
 export type RegisterResponse = LoginResponse
+
+export interface GuideSummary {
+  slug: string
+  title: string
+  region: string
+  difficulty: string
+  lengthKm: number
+}
+
+export interface HomeData {
+  guides: GuideSummary[]
+  popularGuides: Pick<GuideSummary, 'slug' | 'title' | 'region'>[]
+  regions: string[]
+  tours: { id: string; title: string; distanceM: number }[]
+}
