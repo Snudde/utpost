@@ -4,6 +4,7 @@ import { authRouter } from './routes/auth.ts';
 import { guidesRouter } from './routes/guides.ts';
 import { toursRouter } from './routes/tours.js';
 import { photosRouter } from './routes/photos.js';
+import { yoga } from './graphql/server.js';
 import { pool } from './db/client.js';
 import { mongo } from './db/mongo.js';
 
