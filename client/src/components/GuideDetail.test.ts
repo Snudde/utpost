@@ -35,10 +35,9 @@ describe('GuideDetail', () => {
 
   it('hämtar guiden som slugen i URL:en pekar på', () => {
     render(GuideDetail)
-    expect(mockedGql).toHaveBeenCalledWith(
-      expect.stringContaining('GetGuide'),
-      { slug: 'kebnekaise' },
-    )
+    expect(mockedGql).toHaveBeenCalledWith(expect.stringContaining('GetGuide'), {
+      slug: 'kebnekaise',
+    })
   })
 
   it('visar guidens titel och innehåll', async () => {
