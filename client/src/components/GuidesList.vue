@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { gql } from '../graphql'
 import GuideCard from './GuideCard.vue'
 
 const guides = ref([])
@@ -7,23 +8,37 @@ const query = ref('')
 const isLoading = ref(true)
 const error = ref(null)
 
-onMounted(() => {
-  fetch('http://localhost:4000/api/guides')
-    .then((r) => {
-      if (!r.ok) throw new Error(`Kunde inte hämta guider (status ${r.status})`)
-      return r.json()
-    })
-    .then((data) => {
-      guides.value = data
-    })
-    .catch((err) => {
-      error.value = err.message
-    })
-    .finally(() => {
-      isLoading.value = false
-    })
+const GUIDES_QUERY = /* GraphQL */ `
+  query GetGuides {
+    guides {
+      id
+      slug
+      title
+      region
+      difficulty
+      lengthKm
+      bodyHtml
+    }
+  }
+`
+
+onMounted(async () => {
+  try {
+    const data = await gql(GUIDES_QUERY)
+    // Vi mappar fälten så att kortet fungerar oavsett om det läser camelCase eller snake_case
+    guides.value = data.guides.map((g) => ({
+      ...g,
+      length_km: g.lengthKm,
+      body_html: g.bodyHtml,
+    }))
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    isLoading.value = false
+  }
 })
 
+// Denna saknades i scriptet:
 const filteredGuides = computed(() => {
   const q = query.value.trim().toLowerCase()
   if (!q) return guides.value
