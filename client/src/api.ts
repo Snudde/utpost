@@ -1,4 +1,4 @@
-export const API_URL = 'http://localhost:4000/api'
+export const API_URL = '/api'
 
 export const get = async <T>(path: string): Promise<T> => {
   const res = await fetch(`${API_URL}${path}`)
