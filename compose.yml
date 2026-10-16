@@ -1,5 +1,5 @@
-# Startar bara databaserna. Applikationen kör vi lokalt med npm run dev.
-# Portarna på värden (5433, 27017) matchar standardvärdena i api/src/config.js.
+# Hela Utpost lokalt med ett kommando:  docker compose up --build
+# Bara databaserna (och appen med npm run dev på din dator):  docker compose up -d postgres mongo
 services:
   postgres:
     image: postgres:16
@@ -8,9 +8,9 @@ services:
       POSTGRES_PASSWORD: utpost
       POSTGRES_DB: utpost
     ports:
-      - "5433:5432"
+      - "5433:5432" # på värden: 5433, så att npm run dev:api utanför Docker fortfarande fungerar
     volumes:
-      - utpost_pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck: # api väntar tills det här säger ok – annars startar API:et innan databasen svarar
       test: ["CMD-SHELL", "pg_isready -U utpost -d utpost"]
       interval: 5s
@@ -18,21 +18,19 @@ services:
       retries: 10
 
   mongo:
-    image: mongo:8.2
+    image: mongo:8.2 # låst till 8.2: taggarna 8, 8.0 och latest vägrar starta på ny Docker Desktop (Linux-kärna 6.19+, SERVER-121912)
     environment:
       MONGO_INITDB_ROOT_USERNAME: utpost
       MONGO_INITDB_ROOT_PASSWORD: utpost
     ports:
       - "27017:27017"
     volumes:
-      - utpost_mongodata:/data/db
-
+      - mongodata:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
       interval: 5s
       timeout: 3s
       retries: 10
-
 
   api:
     build:
@@ -43,8 +41,8 @@ services:
       # Portarna är containrarnas egna (5432), inte de publicerade (5433).
       DATABASE_URL: postgres://utpost:utpost@postgres:5432/utpost
       MONGO_URL: mongodb://utpost:utpost@mongo:27017/utpost?authSource=admin
-    ports:
-      - "4000:4000" # browsern är INTE med i compose-nätverket – den når API:et via localhost:4000
+    # Inga ports: browsern når API:et genom nginx i client (/api och /graphql skickas vidare
+    # till api:4000 inne i nätverket). Felsöka API:et direkt? Lägg tillbaka  ports: - "4000:4000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,10 +54,10 @@ services:
       context: .
       dockerfile: client/Dockerfile
     ports:
-      - "3001:3001"
+      - "3001:80" # nginx lyssnar på 80 i containern
     depends_on:
       - api
 
 volumes:
-  utpost_pgdata:
-  utpost_mongodata:
+  pgdata:
+  mongodata:

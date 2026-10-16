@@ -1,7 +1,7 @@
-# Utpost-klienten (Vue). Enkel version för M3: bygger appen och serverar dist/ med Vites
-# preview-server. Node och alla node_modules följer med in i imagen, så den väger några
-# hundra MB. Det är medvetet – multi-stage build med nginx kommer i M4.
-FROM node:22-alpine
+# Utpost-klienten (Vue), multi-stage (M4). Byggs från repots ROT, som api/Dockerfile.
+#
+# Steg 1 – build: Node och alla node_modules, bara för att köra vite build.
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -14,7 +14,15 @@ COPY shared/ shared/
 COPY client/ client/
 RUN npm run build --workspace=client
 
-WORKDIR /app/client
-EXPOSE 3001
-# --host 0.0.0.0: lyssna på alla adresser i containern, annars nås den inte utifrån.
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3001"]
+# Steg 2 – det som blir imagen: nginx och de färdiga filerna. Inget Node, inga node_modules,
+# ingen källkod. Allt från steg 1 som inte kopieras hit kastas.
+FROM nginx:1.27-alpine
+
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/client/dist /usr/share/nginx/html
+
+EXPOSE 80
+# nginx-imagen har redan ett CMD som startar servern.
+
+
+
