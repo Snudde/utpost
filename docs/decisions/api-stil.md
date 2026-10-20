@@ -1,9 +1,7 @@
 # Beslutsdokument: API-stil
 
-_Ett av teamets sex beslutsdokument. Skrivs i M4, hålls levande. Samma mall som `testing.md` och `databas.md`._
-
 **Datum:** 2026-10-15
-**Beslut:** _(en eller två meningar: ersätter GraphQL REST, kompletterar det, eller stannar ni på REST för vissa delar? Vilka?)_
+**Beslut:** GraphQL kompletterar REST. Vi använder GraphQL för klienternas dataintensiva vyer och sammansatta läsningar för att eliminera överhämtning och onödiga round-trips (skuld 6), medan REST behålls för autentisering, filuppladdning och hälsokontroller.
 
 ## Bakgrund
 
@@ -108,7 +106,17 @@ Tumregel: **läsningar som en vy sätter ihop av flera resurser går via GraphQL
 
 ## Alternativ vi jämförde
 
-_Minst två riktiga alternativ, t.ex. "laga REST-endpointsen" (smalare svar, en sammansatt endpoint för startsidan) och "GraphQL för allt". Vad talar för och emot vart och ett?_
+1. **Alternativ 1: Behålla och lappa REST (skräddarsydda endpoints & query-parametrar)**
+   - *Fördelar:* Inga nya beroenden eller ramverk behövs (ingen GraphQL-server eller scheman). Standard HTTP-caching via headers (`Cache-Control`, `ETag`) fungerar direkt i webbläsare och proxyer.
+   - *Nackdelar:* Skapar endpoint-svällning (t.ex. `/api/home-composite`, `/api/tours/summary`) eller komplicerade query-parametrar (`?include=user,photos&exclude=body_html`). Knyter backend hårt till specifika klientvyers layout, vilket försämrar flexibiliteten och ökar underhållsbördan i takt med att klienten utvecklas.
+
+2. **Alternativ 2: Ersätta allt med GraphQL (inklusive auth och filuppladdning)**
+   - *Fördelar:* Ett enda enhetligt protokoll och API-kontrakt för hela systemet. Klienten behöver bara en enda anropstyp och klientkonfiguration.
+   - *Nackdelar:* GraphQL saknar inbyggd standard för binär filuppladdning och kräver externa specifikationer (`graphql-multipart-request-spec`) eller multipart-middleware. Att köra enkel autentisering (login/register) eller hälsokontroller (`/api/health`) över GraphQL ger ingen vinst; tvärtom behöver Docker, Compose och externa övervakningsverktyg vanliga HTTP-statuskoder (200/503), inte ett `200 OK` med errors i JSON-bodyn.
+
+3. **Alternativ 3 (valt): Hybridarkitektur – GraphQL kompletterar REST**
+   - *Fördelar:* Vi utnyttjar respektive teknologiers styrkor: GraphQL eliminerar överhämtning och multipla round-trips i sammansatta, dataintensiva vyer (skuld 6), medan REST hanterar filuppladdning (`/api/photos`), auth och infrastrukturhälsa (`/api/health`).
+   - *Nackdelar:* Teamet behöver underhålla två protokoll parallellt under övergångsfasen och vara noggranna med dokumentationen kring vad som hör hemma var.
 
 ## Konsekvenser
 
@@ -123,7 +131,7 @@ hämtar varje vy om allt varje gång.
 inte i dag – vi kastar på första felet.
 
 **N+1 i resolvers.** Varje relation är en databasfråga per rad. Turlistan går från 189 till
-139 databasfrågor, inte till en handfull, och den som lägger till `logs` i frågan får 50 till.
+139 databasfrågor, så fortfarande många och den som lägger till `logs` i frågan får 50 till.
 Mindre svar betyder alltså inte mindre databaslast. Åtgärdas i M5 med batchning (DataLoader)
 eller när turer flyttar till MongoDB (se `databas.md`). API-loggen skriver antalet frågor per
 operation så att vi ser det.
@@ -144,4 +152,4 @@ Löses med codegen från schemat (M5).
 startsidan blir ett anrop i stället för fem, och schemat är ett filter: fält som `password_hash`
 kan inte läcka eftersom de inte går att fråga efter.
 
-**Skrivet av:**
+**Skrivet av:** Oskar, Benjamin, Kalle
