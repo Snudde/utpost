@@ -76,6 +76,24 @@ Bli bättre på att hantera typer och förstå dess användning i backend. Vill 
 
 Fördjupning i noSQL och mongoDB med mer praktiskt användande för att få bättre färdigheter. Ytterliggare fördjupning inom docker, hur man kan få ner data-användningnen och hur man bygger t.ex. en docker image i pipeline.
 
+### M4 Vecka 42 – GraphQL-API v1
+
+**Kursmål:** Fullstack 2, 11 och 19, Cloude 3, 4, och 10
+
+### Vad jag förstått
+
+**Fullstack1 2, 11 och 19:** Översiktlig förståelse i vad graphQL är och dess användningsområden. Skapat förståelse för hur man kombinerar ett restAPI med graphQL och vad dess arkitektur innebär. Skapat förståelse i hur data-lagring och prestanda påverkas beroende av arkitektoniska beslut. 
+
+**Cloude 3, 4 och 10:** Förståelse för hur man kan effektivisera data-lagring i en dockerfile med hjälp av multi-stage och nginx. Lärt mig att bygga och paketera container-images i en pipeline för att senare kunna drivsätta i en molnmiljö.
+
+### Var det syns i mitt arbete
+
+**Branches jag jobbat i:** "docker-image-pipeline, m4-final-docs"
+
+### Kvar att förstå
+
+Djupare förståelse för graphQL och hur man praktiskt skriver resolvers och mutationer. Hur man bygger ett stabilt skottsäkert graphQL API och hur man löser N+1 propblemet som uppstår.
+
 
 
 
