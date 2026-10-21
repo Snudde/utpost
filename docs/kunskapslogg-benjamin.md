@@ -70,9 +70,14 @@ Bli bättre på att hantera typer och förstå dess användning i backend. Vill 
 
 ### Var det syns i mitt arbete
 
-**Branches jag jobbat i:** "document-model, docker-guide-readme"
+**Branches jag jobbat i:** "document-model, "docker-guide-readme", "containerized-to-docker"
 
 ### Kvar att förstå
+
+Fördjupning i noSQL och mongoDB med mer praktiskt användande för att få bättre färdigheter. Ytterliggare fördjupning inom docker, hur man kan få ner data-användningnen och hur man bygger t.ex. en docker image i pipeline.
+
+
+
 
 
 
