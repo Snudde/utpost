@@ -1,14 +1,13 @@
-<script setup>
-import { ref, watch } from 'vue'
+<script setup lang="ts">
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { gql } from '../graphql'
+import { useQuery } from '@urql/vue'
+import { graphql } from '../gql'
 
 const route = useRoute()
-const guide = ref(null)
-const error = ref(null)
-const isLoading = ref(true)
+const slug = computed(() => String(route.params.slug ?? ''))
 
-const GUIDE_QUERY = /* GraphQL */ `
+const GUIDE_QUERY = graphql(`
   query GetGuide($slug: String!) {
     guide(slug: $slug) {
       id
@@ -19,36 +18,24 @@ const GUIDE_QUERY = /* GraphQL */ `
       bodyHtml
     }
   }
-`
+`)
 
-watch(
-  () => route.params.slug,
-  async (slug) => {
-    if (!slug) return
-    guide.value = null
-    error.value = null
-    isLoading.value = true
+const { data, fetching, error } = useQuery({
+  query: GUIDE_QUERY,
+  variables: computed(() => ({ slug: slug.value })),
+  pause: computed(() => !slug.value),
+})
 
-    try {
-      const data = await gql(GUIDE_QUERY, { slug })
-      guide.value = data.guide
-    } catch (err) {
-      error.value = err.message
-    } finally {
-      isLoading.value = false
-    }
-  },
-  { immediate: true },
-)
+const guide = computed(() => data.value?.guide)
 </script>
 
 <template>
-  <p v-if="isLoading">Laddar...</p>
-  <p v-else-if="error" role="alert">Något gick fel: {{ error }}</p>
+  <p v-if="fetching">Laddar...</p>
+  <p v-else-if="error" role="alert">Något gick fel: {{ error.message }}</p>
   <p v-else-if="!guide">Guiden hittades inte.</p>
   <article v-else class="guide">
     <h1>{{ guide.title }}</h1>
     <p class="muted">{{ guide.region }} · {{ guide.difficulty }} · {{ guide.lengthKm }} km</p>
-    <div v-html="guide.bodyHtml" />
+    <div v-html="guide.bodyHtml"></div>
   </article>
 </template>
