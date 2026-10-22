@@ -85,6 +85,18 @@ Klienten (`client/Dockerfile`) använder en multi-stage build där Node.js och `
 - **Nginx routing & proxy:** `client/nginx.conf` hanterar Single Page Application-routing via `try_files $uri $uri/ /index.html;` samt proxar `/api/` och `/graphql` internt till API-containern (`http://api:4000`).
 - **Nätverkssäkerhet:** API:ets port 4000 exponeras inte externt på värddatorn i `compose.yml`. Klienten nås på port 3001 och skickar alla anrop via relativa sökvägar.
 
+## Mätning före/efter (M5)
+
+Turlistan i GraphQL, `tours(limit: 50) { id title distanceM user { displayName } guide { title } photos { id } }`,
+mätt på seedad dev-databas med API:et i compose. Siffran kommer från `extensions.databasfragor` i svaret.
+
+| Mätning                  | Före (M4) | Efter (M5, DataLoader) |
+| ------------------------ | --------- | ---------------------- |
+| Databasfrågor, turlistan | 139       | 4                      |
+
+- **Före:** 1 + 50 user + 38 guide + 50 photos – en fråga per tur och relation (N+1).
+- **Efter:** 1 tours + 1 user + 1 guide + 1 photos – varje loader samlar alla id:n i en `where … = any($1)`.
+
 ## Struktur
 
 - `api/` – Express + Postgres (Drizzle)
