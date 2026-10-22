@@ -49,7 +49,7 @@ export const resolvers = {
   },
 
   LogPoint: {
-    recordedAt: (log) => iso(log.recorded_at),
+    recordedAt: (log) => iso(log.recorded_at ?? log.t),
     elevationM: (log) => log.elevation_m,
     heartRate: (log) => log.heart_rate,
   },
