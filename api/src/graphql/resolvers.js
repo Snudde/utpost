@@ -54,19 +54,15 @@ export const resolvers = {
     heartRate: (log) => log.heart_rate,
   },
 
-  // Relationerna. Varje funktion körs en gång PER TUR i svaret – och bara om klienten bad om
-  // fältet. tours { title } ger 1 databasfråga; tours { title user { displayName } } ger 1 + 50.
-  // Det är N+1-problemet, och det löser vi i M5.
+  // Relationerna. Varje funktion körs fortfarande en gång PER TUR i svaret – men loadern samlar
+  // ihop alla anrop och gör EN databasfråga för hela listan (loaders.js). tours { title user { displayName } }
+  // kostade 1 + 50 frågor i M4; nu 2. Det var N+1-problemet.
   Tour: {
     startedAt: (tour) => iso(tour.started_at),
     distanceM: (tour) => tour.distance_m,
-    user: async (tour, args, { query }) =>
-      (await query('select * from users where id = $1', [tour.user_id])).rows[0],
-    guide: async (tour, args, { query }) =>
-      tour.guide_id ? (await query('select * from guides where id = $1', [tour.guide_id])).rows[0] : null,
-    photos: async (tour, args, { query }) =>
-      (await query('select * from photos where tour_id = $1', [tour.id])).rows,
-    logs: async (tour, args, { query }) =>
-      (await query('select * from tour_logs where tour_id = $1 order by recorded_at', [tour.id])).rows,
+    user: (tour, args, { loaders }) => loaders.user.load(tour.user_id),
+    guide: (tour, args, { loaders }) => (tour.guide_id ? loaders.guide.load(tour.guide_id) : null),
+    photos: (tour, args, { loaders }) => loaders.photos.load(tour.id),
+    logs: (tour, args, { loaders }) => loaders.logs.load(tour.id),
   },
 };
