@@ -1,21 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/vue'
 import GuideDetail from './GuideDetail.vue'
-import { gql } from '../graphql'
+import { mockGraphql, urqlPlugin } from '../test-urql'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { slug: 'kebnekaise' } }),
 }))
 
-vi.mock('../graphql', () => ({
-  gql: vi.fn(),
-}))
-
-const mockedGql = vi.mocked(gql)
-
 const kebnekaise = {
   id: '1',
-  slug: 'kebnekaise',
   title: 'Kebnekaise',
   region: 'Lappland',
   difficulty: 'svår',
@@ -23,33 +16,42 @@ const kebnekaise = {
   bodyHtml: '<p>Sveriges tak</p>',
 }
 
+const renderGuide = () => render(GuideDetail, { global: { plugins: [urqlPlugin()] } })
+
 describe('GuideDetail', () => {
   beforeEach(() => {
-    mockedGql.mockResolvedValue({ guide: kebnekaise })
+    mockGraphql({ data: { guide: kebnekaise } })
   })
 
   afterEach(() => {
     cleanup()
-    vi.clearAllMocks()
+    vi.unstubAllGlobals()
   })
 
-  it('hämtar guiden som slugen i URL:en pekar på', () => {
-    render(GuideDetail)
-    expect(mockedGql).toHaveBeenCalledWith(expect.stringContaining('GetGuide'), {
-      slug: 'kebnekaise',
-    })
+  it('hämtar guiden som slugen i URL:en pekar på', async () => {
+    renderGuide()
+    // urql skickar anropet asynkront, inte direkt i render
+    await vi.waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        '/graphql',
+        expect.objectContaining({ body: expect.stringContaining('"slug":"kebnekaise"') }),
+      ),
+    )
   })
 
   it('visar guidens titel och innehåll', async () => {
-    render(GuideDetail)
+    renderGuide()
     expect(await screen.findByRole('heading', { name: 'Kebnekaise' })).toBeInTheDocument()
     expect(screen.getByText(/Lappland/)).toBeInTheDocument()
     expect(screen.getByText('Sveriges tak')).toBeInTheDocument()
   })
 
   it('visar ett fel när anropet misslyckas', async () => {
-    mockedGql.mockRejectedValueOnce(new Error('Kunde inte hämta guide'))
-    render(GuideDetail)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new Error('Kunde inte hämta guide'))),
+    )
+    renderGuide()
     expect(await screen.findByRole('alert')).toHaveTextContent('Kunde inte hämta guide')
   })
 })
