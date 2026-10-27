@@ -22,7 +22,10 @@
     "build": "npm run build --workspace=client",
     "typecheck": "npm run typecheck:api && npm run typecheck:client",
     "typecheck:api": "npm run typecheck --workspace=api",
-    "typecheck:client": "npm run typecheck --workspace=client"
+    "typecheck:client": "npm run typecheck --workspace=client",
+    "codegen": "npm run codegen --workspace=client",
+    "test:api": "npm run test --workspace=api",
+    "migrate:logs": "npm run migrate:logs --workspace=api"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
