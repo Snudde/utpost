@@ -1,12 +1,22 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/vue'
+import { ref } from 'vue'
+import { useQuery } from '@urql/vue'
 import HomeView from './HomeView.vue'
-import { mockGraphql, urqlPlugin } from '../test-urql'
+
+// Vi mockar @urql/vue: vyn får det useQuery skulle ha gett, utan klient och utan nätverk.
+vi.mock('@urql/vue', () => ({ useQuery: vi.fn() }))
+
+const queryResult = (result: { data?: unknown; error?: unknown }) =>
+  vi.mocked(useQuery).mockReturnValue({
+    data: ref(result.data),
+    error: ref(result.error),
+    fetching: ref(false),
+  } as unknown as ReturnType<typeof useQuery>)
 
 const renderView = () =>
   render(HomeView, {
     global: {
-      plugins: [urqlPlugin()],
       stubs: { RouterLink: { template: '<a><slot /></a>' } },
     },
   })
@@ -14,11 +24,11 @@ const renderView = () =>
 describe('HomeView', () => {
   afterEach(() => {
     cleanup()
-    vi.unstubAllGlobals()
+    vi.clearAllMocks()
   })
 
-  it('visar startsidan från ett enda GraphQL-anrop', async () => {
-    mockGraphql({
+  it('visar startsidan från ett enda GraphQL-anrop', () => {
+    queryResult({
       data: {
         guides: [
           {
@@ -36,16 +46,18 @@ describe('HomeView', () => {
     })
     renderView()
 
-    expect(await screen.findByText('1 guider i 2 landskap.')).toBeInTheDocument()
+    expect(screen.getByText('1 guider i 2 landskap.')).toBeInTheDocument()
     expect(screen.getByText('Kvällstur')).toBeInTheDocument()
     expect(screen.getByText('8.4 km')).toBeInTheDocument()
-    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(useQuery).toHaveBeenCalledTimes(1)
   })
 
-  it('visar felet när GraphQL svarar med errors', async () => {
-    mockGraphql({ errors: [{ message: 'Cannot query field "titel" on type "Guide".' }] })
+  it('visar felet när GraphQL svarar med errors', () => {
+    queryResult({
+      error: new Error('[GraphQL] Cannot query field "titel" on type "Guide".'),
+    })
     renderView()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot query field')
+    expect(screen.getByRole('alert')).toHaveTextContent('Cannot query field')
   })
 })

@@ -1,26 +1,37 @@
-<script setup>
-import { ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { useQuery } from '@urql/vue'
 import { RouterLink } from 'vue-router'
-import { get } from '@/api'
+import { graphql } from '../gql'
 
-const tours = ref([])
-const loading = ref(true)
-
-onMounted(async () => {
-  try {
-    const data = await get('/tours')
-    tours.value = data
-  } catch (error) {
-    console.error('Kunde inte hämta turer:', error)
-  } finally {
-    loading.value = false
+// Turlistan via GraphQL i stället för GET /api/tours. REST-svaret var 282 kB med alla mätpunkter
+// och hela användarraden (inklusive password_hash); den här frågan ber bara om fälten tabellen
+// visar – ca 7 kB. Mätningen står i docs/decisions/api-stil.md.
+const TOURS_QUERY = graphql(`
+  query Tours {
+    tours(limit: 50) {
+      id
+      title
+      distanceM
+      user {
+        displayName
+      }
+      guide {
+        title
+      }
+      photos {
+        id
+      }
+    }
   }
-})
+`)
+
+const { data, error } = useQuery({ query: TOURS_QUERY })
 </script>
 
 <template>
   <h1 class="green">Turer</h1>
-  <p v-if="loading">Laddar turer...</p>
+  <p v-if="error" role="alert">Kunde inte hämta turer: {{ error }}</p>
+  <p v-else-if="!data">Laddar turer...</p>
   <table v-else class="tours">
     <thead>
       <tr class="flex-center">
@@ -32,16 +43,16 @@ onMounted(async () => {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="t in tours" :key="t.id">
+      <tr v-for="t in data.tours" :key="t.id">
         <td>
           <RouterLink :to="`/turer/${t.id}`">
             {{ t.title }}
           </RouterLink>
         </td>
-        <td>{{ t.user?.display_name }}</td>
+        <td>{{ t.user.displayName }}</td>
         <td>{{ t.guide?.title ?? '-' }}</td>
-        <td>{{ Math.round(t.distance_m / 100) / 10 }} km</td>
-        <td>{{ t.photos?.length ?? 0 }}</td>
+        <td>{{ Math.round(t.distanceM / 100) / 10 }} km</td>
+        <td>{{ t.photos.length }}</td>
       </tr>
     </tbody>
   </table>
