@@ -38,11 +38,10 @@ export const createLoaders = ({ query, mongoFind }) => ({
   ),
   // Tour.logs: mätpunkterna ligger kvar i Postgres (tour_logs) tills de migreras till MongoDB.
   // Samma mönster som photos: en fråga för alla turer i svaret.
-  logs: new DataLoader(async (tourIds) =>
-    groupBy(
-      (await query('select * from tour_logs where tour_id = any($1) order by recorded_at', [tourIds])).rows,
-      'tour_id',
-      tourIds,
-    ),
-  ),
+  logs: new DataLoader(async (tourIds) => {
+    const ids = tourIds.map(Number);
+    const docs = await mongoFind('tours', { tour_id: { $in: ids } }, { tour_id: 1, logs: 1 });
+    const map = new Map(docs.map((d) => [d.tour_id, d.logs ?? []]));
+    return ids.map((id) => map.get(id) ?? []);
+  }),
 });

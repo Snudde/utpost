@@ -8,6 +8,68 @@ on:
 
 
 jobs:
+  quality:
+    name: Kvalitet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm            # cachar ~/.npm nycklat på package-lock.json
+      - run: npm ci             # installerar ALLA workspaces (api, web, client) – exakt enligt lockfilen
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck   # M2: vue-tsc i client/ och tsc i api/ – kontraktet kontrolleras innan testerna körs
+      - run: npm test
+
+       # M5: integrationstester mot GraphQL-servern med riktig databas. Postgres och Mongo startas som
+  # services bredvid jobbet – samma images som i compose.yaml – och nås på localhost.
+  
+  integration:
+    name: Integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: utpost
+          POSTGRES_PASSWORD: utpost
+          POSTGRES_DB: utpost
+        ports:
+          - 5432:5432              # i jobbet: localhost:5432 (inte 5433 som på din dator)
+        options: >-
+          --health-cmd "pg_isready -U utpost -d utpost"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      mongo:
+        image: mongo:8.2
+        env:
+          MONGO_INITDB_ROOT_USERNAME: utpost
+          MONGO_INITDB_ROOT_PASSWORD: utpost
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Samma variabler som compose sätter för api – men här är databaserna på localhost.
+      DATABASE_URL: postgres://utpost:utpost@localhost:5432/utpost
+      MONGO_URL: mongodb://utpost:utpost@localhost:27017/utpost?authSource=admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run seed          # tom databas → testdata, exakt som lokalt
+      - run: npm run migrate:logs  # mätpunkterna till Mongo – testet för Tour.logs kräver det
+      - run: npm run test:api
+
   build:
     runs-on: ubuntu-latest
 
