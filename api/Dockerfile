@@ -16,6 +16,8 @@ COPY shared/ shared/
 COPY api/ api/
 
 WORKDIR /app/api
+ARG GIT_SHA
+ENV GIT_SHA=$GIT_SHA
 EXPOSE 4000
 # Node 22.18+ kör routes/guides.ts direkt – inget byggsteg behövs.
 CMD ["node", "src/index.js"]

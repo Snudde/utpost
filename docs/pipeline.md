@@ -118,9 +118,36 @@ Körs automatiskt vid push till `main`, under förutsättning att **både** `ima
 
 ---
 
+## Pipelinens Jobbtabell
+
+| Jobb | Vad det gör | Vad det skyddar mot | Tidsåtgång |
+|---|---|---|---|
+| **Kvalitet (`quality`)** | Lint, format, typecheck, enhetstester | Syntaxfel, formateringsfel, TypeScript-kontraktsbrott | ~1 min |
+| **Integration (`integration`)** | Kör integrationstester mot riktiga Postgres- och Mongo-databaser | Trasiga API-endpoints, SQL/Mongo-fel, DataLoader-regressioner | ~1 min |
+| **Bygg (`build`)** | Bygger Vue-klienten för produktion | Trasiga frontend-byggen | ~1 min |
+| **Image (`image`)** | Docker buildx & push till GHCR | Image-byggfel, saknade filer i container | ~1,5 min |
+| **Deploy (M6)** | `az containerapp update … --image …:sha-…` ×2 (api, client – två revisioner per deploy), vänta på `sha` i `/api/health` och på sista revisionen, röktest `/graphql` | En image som inte startar, en nginx-mall som inte renderas, en app som inte kommer upp – innan någon användare ser det | ~1,5 min (bara på `main`; väcks appen från noll tillkommer ~1 min) |
+
+---
+
+## Branch Protection & Deploy-strategi
+
+- *Deploy → Azure staging* är **inte** en status check: den körs efter merge, på `main`. Blir den röd är `main` ändå korrekt – det är staging som inte uppdaterades. Rätta och merga igen, eller rulla tillbaka med `az containerapp update … --image <förra sha-taggen>` (varje image i GHCR har sin sha-tagg kvar).
+
+---
+
+## Kända fel & Felsökning
+
+- **Deploy rött med *AADSTS700213 No matching federated identity record*:** Subjectet stämmer inte. Felmeddelandet skriver ut det subject GitHub skickade – skapa en federerad identitet till med exakt det värdet (`az ad app federated-credential create`, nytt `name`). Jobbet måste också ha `environment: azure-staging`.
+- **Deploy rött på *Vänta tills staging kör den här committen*:** Appen startar från noll (fyra containrar + seed, ~1 min) – 30 försök à 10 s brukar räcka. Står `sha` kvar på det gamla värdet efter fem minuter: revisionen startade inte. `az containerapp logs show --name utpost-staging --resource-group utpost-benjamin-klingberg-rg --container api --tail 50`.
+- **Deploy rött på röktestet men väntan grön:** `/api/health` svarar genom nginx (så `API_UPSTREAM` är rätt), men GraphQL ger ingen data – databasen är tom (`SEED_ON_START` saknas eller seeden misslyckades: `az containerapp logs show … --container api`). Är det väntan som är röd med `502`/inget svar är det nginx som inte når api: `API_UPSTREAM` ska vara `localhost:4000` i Azure.
+- **Deploy rött på *revision already exists*:** Jobbet kördes om (Re-run) och revisionssuffixet `sha-<7>` är redan använt. Suffixet är commitens sha, så vägen framåt är en ny commit – inte Re-run.
+
+---
+
 ## Azure Staging-infrastruktur
 
 Infrastrukturen för staging är deklarerad i repot och förbereds manuellt en gång per team:
-- [`infra/azure/skapa-staging.sh`](../infra/azure/skapa-staging.sh): Skapar Azure-resursgrupp (`utpost-rg`), Container App-miljö (`utpost-env`) och Container Appen ur `staging.yaml`.
+- [`infra/azure/skapa-staging.sh`](../infra/azure/skapa-staging.sh): Skapar Azure-resursgrupp (`utpost-benjamin-klingberg-rg`), Container App-miljö (`utpost-env`) och Container Appen ur `staging.yaml`.
 - [`infra/azure/identitet.sh`](../infra/azure/identitet.sh): Skapar en Azure App Registration och Service Principal med rollen `Contributor` på resursgruppen, sätter upp federerad OIDC-koppling mot GitHub-miljön `azure-staging`, samt sätter motsvarande variabler i GitHub via GitHub CLI (`gh`).
 - [`infra/azure/staging.yaml`](../infra/azure/staging.yaml): Container App-specifikation som kör hela stacken (`client`, `api`, `postgres`, `mongo`) i samma app på delad `localhost`.

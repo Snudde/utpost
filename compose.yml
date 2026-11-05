@@ -53,6 +53,8 @@ services:
     build:
       context: .
       dockerfile: client/Dockerfile
+    environment:
+      - API_UPSTREAM=api:4000
     ports:
       - "3001:80" # nginx lyssnar på 80 i containern
     depends_on:

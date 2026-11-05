@@ -30,7 +30,7 @@ app.get('/api/health', async (req, res) => {
     await mongo.db().command({ ping: 1 });
   });
   const ok = postgres === 'ok' && mongodb === 'ok';
-  res.status(ok ? 200 : 503).json({ ok, version: '1.4.2', postgres, mongodb });
+  res.status(ok ? 200 : 503).json({ ok, version: '1.4.2', sha: process.env.GIT_SHA || 'dev', postgres, mongodb });
 });
 
 app.use('/api/auth', authRouter);
