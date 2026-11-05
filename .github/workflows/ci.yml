@@ -140,3 +140,79 @@ jobs:
           labels: ${{ steps.meta-client.outputs.labels }}
           cache-from: type=gha,scope=client
           cache-to: type=gha,mode=max,scope=client
+
+  deploy:
+      name: Deploy → Azure staging
+      runs-on: ubuntu-latest
+      needs: [image, integration]                      # samma image som Image publicerade; aldrig en deploy av kod med röda API-tester
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      environment:
+        name: azure-staging                            # variablerna (id:n och adressen) ligger på miljön, inte i repot
+        url: ${{ vars.AZURE_URL }}
+      permissions:
+        id-token: write                                # får be GitHub om en kortlivad OIDC-token – det finns ingen lösenordshemlighet
+        contents: read
+      concurrency:
+        group: deploy-staging
+        cancel-in-progress: false                      # två deployer i rad får köa, inte avbryta varandra
+      steps:
+        - name: Logga in i Azure med GitHubs identitet (OIDC)
+          uses: azure/login@v3
+          with:
+            client-id: ${{ vars.AZURE_CLIENT_ID }}
+            tenant-id: ${{ vars.AZURE_TENANT_ID }}
+            subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+        - name: Byt image på api och client – exakt den här committen
+          env:
+            RG: ${{ vars.AZURE_RG }}
+            APP: ${{ vars.AZURE_APP }}
+          run: |
+            az extension add --name containerapp --upgrade --only-show-errors
+            REPO="${GITHUB_REPOSITORY,,}"                        # GHCR kräver gemener
+            TAG="sha-${GITHUB_SHA::7}"                           # samma tagg som docker/metadata-action satte i Image
+            # --container-name tar en container per anrop → två anrop, två revisioner (den första kör
+            # ny api med gammal client några sekunder). Suffixen gör namnen förutsägbara – och ett
+            # suffix går bara att använda en gång: en omkörning av jobbet kräver en ny commit.
+            az containerapp update --name "$APP" --resource-group "$RG" \
+              --container-name api --image "ghcr.io/${REPO}-api:${TAG}" \
+              --revision-suffix "${TAG}-api" --output none
+            az containerapp update --name "$APP" --resource-group "$RG" \
+              --container-name client --image "ghcr.io/${REPO}-client:${TAG}" \
+              --revision-suffix "${TAG}" \
+              --query properties.latestRevisionName --output tsv
+
+        - name: Vänta tills staging kör den här committen
+          env:
+            URL: ${{ vars.AZURE_URL }}
+            RG: ${{ vars.AZURE_RG }}
+            APP: ${{ vars.AZURE_APP }}
+          run: |
+            URL="${URL%/}"
+            TAG="sha-${GITHUB_SHA::7}"
+            for i in $(seq 1 30); do
+              # Anropet går genom nginx i client-containern – svarar health med rätt sha är hela kedjan uppe.
+              LIVE=$(curl -fsS --max-time 20 "$URL/api/health" 2>/dev/null | sed -n 's/.*"sha":"\([^"]*\)".*/\1/p' || true)
+              # …och den revision som svarar ska vara den sista (client-uppdateringen), inte mellanrevisionen.
+              REV=$(az containerapp show --name "$APP" --resource-group "$RG" --query properties.latestReadyRevisionName --output tsv 2>/dev/null || true)
+              if [ "$LIVE" = "$GITHUB_SHA" ] && [ "${REV##*--}" = "$TAG" ]; then
+                echo "✅ $URL kör $GITHUB_SHA (revision $REV)"
+                exit 0
+              fi
+              echo "Försök $i/30: staging kör ${LIVE:-(inget svar ännu – appen väcks från noll?)}, klar revision ${REV:-?}, väntar 10 s"
+              sleep 10
+            done
+            echo "::error::Staging kör inte $GITHUB_SHA efter 5 minuter. Kolla Revisions and replicas i portalen, eller az containerapp logs show --container api."
+            exit 1
+
+        - name: Röktest – GraphQL genom nginx-proxyn
+          env:
+            URL: ${{ vars.AZURE_URL }}
+          run: |
+            URL="${URL%/}"
+            SVAR=$(curl -fsS --max-time 20 "$URL/graphql" -H 'Content-Type: application/json' \
+              -d '{"query":"{ tours(limit: 1) { id user { displayName } } }"}')
+            echo "$SVAR"
+            echo "$SVAR" | grep -q '"displayName"' || { echo "::error::GraphQL svarade utan data"; exit 1; }
+            echo "✅ /graphql svarar via nginx, med data ur en seedad databas"
+
