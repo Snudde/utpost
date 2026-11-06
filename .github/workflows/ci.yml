@@ -184,9 +184,21 @@ jobs:
               --revision-suffix "${TAG}" \
               --query properties.latestRevisionName --output tsv
 
-        - name: Vänta tills staging kör den här committen
+        - name: Ta reda på staging-adressen
           env:
             URL: ${{ vars.AZURE_URL }}
+            RG: ${{ vars.AZURE_RG }}
+            APP: ${{ vars.AZURE_APP }}
+          run: |
+            # AZURE_URL på miljön vinner. Saknas den frågar vi Azure – identiteten får läsa resursgruppen.
+            if [ -z "$URL" ]; then
+              URL="https://$(az containerapp show --name "$APP" --resource-group "$RG" --query properties.configuration.ingress.fqdn --output tsv)"
+            fi
+            echo "Staging: $URL"
+            echo "URL=${URL%/}" >> "$GITHUB_ENV"                 # gäller i stegen nedan
+
+        - name: Vänta tills staging kör den här committen
+          env:
             RG: ${{ vars.AZURE_RG }}
             APP: ${{ vars.AZURE_APP }}
           run: |
@@ -208,8 +220,6 @@ jobs:
             exit 1
 
         - name: Röktest – GraphQL genom nginx-proxyn
-          env:
-            URL: ${{ vars.AZURE_URL }}
           run: |
             URL="${URL%/}"
             SVAR=$(curl -fsS --max-time 20 "$URL/graphql" -H 'Content-Type: application/json' \
