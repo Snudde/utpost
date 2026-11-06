@@ -51,7 +51,7 @@ flowchart TD
 ### 1. `quality` (Kvalitetskontroller)
 Körs på både Pull Requests och pushes mot `main`:
 1. **Node.js-miljö:** Sätter upp Node.js v22 med npm-cache (`actions/setup-node@v4`).
-2. **Beroenden:** `npm ci` installerar låsta beroenden för alla tre workspaces (`api`, `web`, `client`).
+2. **Beroenden:** `npm ci` installerar låsta beroenden för alla workspaces (`api`, `client`, `shared`).
 3. **Statisk analys:** `npm run lint` (ESLint) och `npm run format:check` (Prettier).
 4. **Typkontroll:** `npm run typecheck` (`tsc` för API och `vue-tsc` för klienten kontrollerar att kontraktet i `@utpost/shared` efterlevs).
 5. **Enhetstester:** `npm test` kör enhetstester för frontend och hjälparfunktioner.
@@ -115,6 +115,19 @@ Körs automatiskt vid push till `main`, under förutsättning att **både** `ima
      { tours(limit: 1) { id user { displayName } } }
      ```
    - Validerar att svaret returnerar data (`displayName`) genom Nginx-proxyn från den seedade databasen, vilket verifierar att hela anropskedjan (Nginx → API → Postgres) är intakt.
+
+---
+
+## `npm ci` före och efter att `web/` togs bort (M6)
+
+React-klienten (`web/`) togs bort när alla vyer var portade till Vue (`client/`). Mätt lokalt i en ren kopia av `main`, tre körningar var, med varm npm-cache (som `cache: npm` i pipelinen), tid enligt npm:
+
+| | Workspaces | Paket | `npm ci` | `node_modules` |
+|---|---|---|---|---|
+| Före | api, web, client, shared | 904 | 55 / 57 / 56 s | 321 MB |
+| Efter | api, client, shared | 888 | 56 / 55 / 56 s | 312 MB |
+
+Tiden ändras inte mätbart. React-klienten hade bara tre egna beroenden (`react`, `react-dom`, `react-router-dom`) – Vite, ESLint och resten av verktygen delades redan med `client/`. Vinsten är inte sekunder utan en klient i stället för två: en uppsättning vyer, tester och byggsteg. I pipelinen tog steget `npm ci` 5–23 s per jobb före borttagningen, beroende på hur varm cachen var.
 
 ---
 

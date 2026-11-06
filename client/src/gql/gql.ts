@@ -17,12 +17,14 @@ type Documents = {
     "\n  query GetGuide($slug: String!) {\n    guide(slug: $slug) {\n      id\n      title\n      region\n      difficulty\n      lengthKm\n      bodyHtml\n    }\n  }\n": typeof types.GetGuideDocument,
     "\n  query GetGuides {\n    guides {\n      id\n      slug\n      title\n      region\n      difficulty\n      lengthKm\n      bodyHtml\n    }\n  }\n": typeof types.GetGuidesDocument,
     "\n  query Home {\n    guides {\n      slug\n      title\n      region\n      difficulty\n      lengthKm\n    }\n    popularGuides(limit: 6) {\n      slug\n      title\n      region\n    }\n    regions\n    tours(limit: 5) {\n      id\n      title\n      distanceM\n    }\n  }\n": typeof types.HomeDocument,
+    "\n  query MyTours {\n    tours(limit: 200) {\n      id\n      title\n      user {\n        id\n      }\n    }\n  }\n": typeof types.MyToursDocument,
     "\n  query Tours {\n    tours(limit: 50) {\n      id\n      title\n      distanceM\n      user {\n        displayName\n      }\n      guide {\n        title\n      }\n      photos {\n        id\n      }\n    }\n  }\n": typeof types.ToursDocument,
 };
 const documents: Documents = {
     "\n  query GetGuide($slug: String!) {\n    guide(slug: $slug) {\n      id\n      title\n      region\n      difficulty\n      lengthKm\n      bodyHtml\n    }\n  }\n": types.GetGuideDocument,
     "\n  query GetGuides {\n    guides {\n      id\n      slug\n      title\n      region\n      difficulty\n      lengthKm\n      bodyHtml\n    }\n  }\n": types.GetGuidesDocument,
     "\n  query Home {\n    guides {\n      slug\n      title\n      region\n      difficulty\n      lengthKm\n    }\n    popularGuides(limit: 6) {\n      slug\n      title\n      region\n    }\n    regions\n    tours(limit: 5) {\n      id\n      title\n      distanceM\n    }\n  }\n": types.HomeDocument,
+    "\n  query MyTours {\n    tours(limit: 200) {\n      id\n      title\n      user {\n        id\n      }\n    }\n  }\n": types.MyToursDocument,
     "\n  query Tours {\n    tours(limit: 50) {\n      id\n      title\n      distanceM\n      user {\n        displayName\n      }\n      guide {\n        title\n      }\n      photos {\n        id\n      }\n    }\n  }\n": types.ToursDocument,
 };
 
@@ -52,6 +54,10 @@ export function graphql(source: "\n  query GetGuides {\n    guides {\n      id\n
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query Home {\n    guides {\n      slug\n      title\n      region\n      difficulty\n      lengthKm\n    }\n    popularGuides(limit: 6) {\n      slug\n      title\n      region\n    }\n    regions\n    tours(limit: 5) {\n      id\n      title\n      distanceM\n    }\n  }\n"): (typeof documents)["\n  query Home {\n    guides {\n      slug\n      title\n      region\n      difficulty\n      lengthKm\n    }\n    popularGuides(limit: 6) {\n      slug\n      title\n      region\n    }\n    regions\n    tours(limit: 5) {\n      id\n      title\n      distanceM\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query MyTours {\n    tours(limit: 200) {\n      id\n      title\n      user {\n        id\n      }\n    }\n  }\n"): (typeof documents)["\n  query MyTours {\n    tours(limit: 200) {\n      id\n      title\n      user {\n        id\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

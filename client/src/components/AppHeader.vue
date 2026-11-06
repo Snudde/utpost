@@ -14,7 +14,9 @@ const sessionStore = useAuthStore()
       </div>
       <div class="login-area">
         <template v-if="sessionStore.isAuthenticated">
-          <span class="user-info">{{ sessionStore.user?.display_name }}</span>
+          <RouterLink to="/profil" class="user-info">{{
+            sessionStore.user?.display_name
+          }}</RouterLink>
           <button class="logout-btn" @click="sessionStore.logout">Logga ut</button>
         </template>
         <RouterLink v-else to="/login">Login</RouterLink>

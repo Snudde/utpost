@@ -113,7 +113,6 @@ Turlistan och turdetaljer i GraphQL mätt på seedad dev-databas och migrerad Mo
 ## Struktur
 
 - `api/` – Express + Postgres (Drizzle)
-- `web/` – React + Vite
 - `client/` - Vue + Vite
 - `shared/` - Delade TypeScript-typer / API-kontrakt (@utpost/shared)
 - `compose.yml` – Docker Compose-konfiguration för hela stacken

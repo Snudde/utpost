@@ -4,5 +4,5 @@
 # API (Express + Postgres/Drizzle)
 /api/   @Snudde @klingbladet
 
-# Web (React + Vite)
-/web/   @Snudde @klingbladet
+# Klient (Vue + Vite)
+/client/   @Snudde @klingbladet
