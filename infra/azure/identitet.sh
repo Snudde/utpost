@@ -7,7 +7,6 @@
 #   REPO=<ägare>/<repo> ./infra/azure/identitet.sh      (kräver az + gh inloggade)
 set -euo pipefail
 export MSYS_NO_PATHCONV=1
-export MSYS2_ARG_CONV_EXCL="*"
 
 : "${REPO:?Sätt REPO=<ägare>/<repo>}"
 REPO="$(echo "${REPO}" | tr -d '\r')"
@@ -32,13 +31,15 @@ az ad sp show --id "${APPID}" --output none 2>/dev/null || az ad sp create --id 
 
 echo "→ rollen Contributor på BARA resursgruppen ${RG} (inte hela prenumerationen)"
 az account set --subscription "${SUB}"
-SCOPE="/subscriptions/${SUB}/resourceGroups/${RG}"
-echo "   Scope: ${SCOPE}"
 
 TILLDELAD=""
 for i in 1 2 3 4 5 6; do
-  if MSYS_NO_PATHCONV=1 az role assignment create --role Contributor --assignee "${APPID}" --scope "${SCOPE}" --output none; then TILLDELAD=ja; break; fi
-  echo "   (identiteten syns ofta inte direkt efter att den skapats – väntar 10 s, försök ${i}/6)"; sleep 10
+  if az role assignment create --role Contributor --assignee "${APPID}" --scope "//subscriptions/${SUB}/resourceGroups/${RG}" --output none 2>/dev/null; then
+    TILLDELAD=ja
+    break
+  fi
+  echo "   (identiteten syns ofta inte direkt efter att den skapats – väntar 10 s, försök ${i}/6)"
+  sleep 10
 done
 if [ -z "${TILLDELAD}" ]; then
   echo "FEL: rolltilldelningen gick inte igenom. Utan den blir Deploy rött med AuthorizationFailed." >&2
