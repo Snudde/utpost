@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js",
+    "start": "node src/boot.js",
     "seed": "node src/db/seed.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",

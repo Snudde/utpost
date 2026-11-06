@@ -7,7 +7,7 @@
 import { pool } from './client.js';
 import { mongo, toursCollection } from './mongo.js';
 
-const run = async () => {
+export const migrateLogs = async ({ close = false } = {}) => {
   const t0 = Date.now();
   const tours = (await pool.query('select * from tours order by id')).rows;
   const logs = (await pool.query('select * from tour_logs order by tour_id, recorded_at')).rows;
@@ -66,11 +66,17 @@ const run = async () => {
     throw new Error('Migreringen stämmer inte – antalet dokument eller mätpunkter avviker');
   }
   console.log('Verifierat: inget tappades på vägen.');
-  await mongo.close();
-  await pool.end();
+  if (close) {
+    await mongo.close();
+    await pool.end();
+  }
 };
 
-run().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+import { fileURLToPath } from 'node:url';
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  migrateLogs({ close: true }).catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
+}
