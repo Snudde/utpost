@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: 22
           cache: npm            # cachar ~/.npm nycklat på package-lock.json
-      - run: npm ci             # installerar ALLA workspaces (api, web, client) – exakt enligt lockfilen
+      - run: npm ci             # installerar ALLA workspaces (api, client, shared) – exakt enligt lockfilen
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck   # M2: vue-tsc i client/ och tsc i api/ – kontraktet kontrolleras innan testerna körs
