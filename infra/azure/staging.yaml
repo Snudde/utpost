@@ -1,0 +1,84 @@
+# Utpost staging i Azure Container Apps (M6) – hela appen som EN Container App med fyra containrar
+# (sidecars): client (nginx, tar emot trafiken), api, postgres och mongo. De delar localhost.
+#
+# Varför så här i staging: gratiskvoten räknas per prenumeration, och appen får skala till noll
+# mellan passen. Databaserna har ingen volym – varje kallstart ger en tom databas som api:et
+# seedar själv (SEED_ON_START=1). I produktion byts postgres/mongo mot managed databaser
+# (Azure Database for PostgreSQL, Cosmos DB for MongoDB) – det är beslutet i docs/decisions/hosting.md.
+#
+# Används av infra/azure/skapa-staging.sh: platshållarna __…__ byts ut innan filen skickas till
+# az containerapp create --yaml. Pipelinen rör aldrig den här filen: den byter bara image med
+# az containerapp update --container-name api/client --image …:sha-….
+location: __LOCATION__
+name: __APP__
+resourceGroup: __RG__
+type: Microsoft.App/containerApps
+properties:
+  managedEnvironmentId: __ENV_ID__
+  configuration:
+    activeRevisionsMode: Single
+    ingress:
+      external: true
+      targetPort: 80          # client (nginx) – det enda som nås utifrån
+      transport: auto
+      allowInsecure: false
+    secrets:
+      - name: jwt-secret
+        value: __JWT_SECRET__
+      - name: database-url
+        value: postgres://utpost:__DB_PASSWORD__@localhost:5432/utpost
+      - name: mongo-url
+        value: mongodb://utpost:__DB_PASSWORD__@localhost:27017/utpost?authSource=admin
+      - name: db-password
+        value: __DB_PASSWORD__
+  template:
+    containers:
+      - name: client
+        image: __IMAGE_CLIENT__
+        resources:
+          cpu: 0.25
+          memory: 0.5Gi
+        env:
+          - name: API_UPSTREAM
+            value: localhost:4000   # api är en sidecar – samma localhost
+      - name: api
+        image: __IMAGE_API__
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+        env:
+          - name: PORT
+            value: "4000"
+          - name: SEED_ON_START
+            value: "1"
+          - name: DATABASE_URL
+            secretRef: database-url
+          - name: MONGO_URL
+            secretRef: mongo-url
+          - name: JWT_SECRET
+            secretRef: jwt-secret
+      - name: postgres
+        image: postgres:16
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+        env:
+          - name: POSTGRES_USER
+            value: utpost
+          - name: POSTGRES_DB
+            value: utpost
+          - name: POSTGRES_PASSWORD
+            secretRef: db-password
+      - name: mongo
+        image: mongo:8.2
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+        env:
+          - name: MONGO_INITDB_ROOT_USERNAME
+            value: utpost
+          - name: MONGO_INITDB_ROOT_PASSWORD
+            secretRef: db-password
+    scale:
+      minReplicas: 0           # skalar till noll mellan passen – kostar inget, men första anropet väcker allt (~1 min)
+      maxReplicas: 1           # en replica: databaserna lever i den

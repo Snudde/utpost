@@ -14,7 +14,6 @@ Plattform för friluftsdestinationer. Redaktionella guider, användarnas egna tu
     ```bash
     docker compose up --build -d
     ```
-2. **Skapa tabeller och seeda data:**
 2. **Skapa tabeller, seeda data och migrera mätpunkter till MongoDB:**
     ```bash
     docker compose exec api npm run seed
@@ -31,13 +30,11 @@ Plattform för friluftsdestinationer. Redaktionella guider, användarnas egna tu
    ```bash
    docker compose up -d postgres mongo
    ```
-3. **Skapa tabeller och seeda data i databaser:**
 3. **Skapa tabeller, seeda data och migrera mätpunkter:**
    ```bash
    npm run seed
    npm run migrate:logs
    ```
-4. **Starta applikationen lokalt:**
 4. **Kör integrationstester:**
    ```bash
    npm run test:api
@@ -96,21 +93,14 @@ Klienten (`client/Dockerfile`) använder en multi-stage build där Node.js och `
 
 ## Mätning före/efter (M5)
 
-Turlistan i GraphQL, `tours(limit: 50) { id title distanceM user { displayName } guide { title } photos { id } }`,
-mätt på seedad dev-databas med API:et i compose. Siffran kommer från `extensions.databasfragor` i svaret.
 Turlistan och turdetaljer i GraphQL mätt på seedad dev-databas och migrerad MongoDB. Siffran kommer från `extensions.databasfragor` i svaret.
 
-| Mätning                  | Före (M4) | Efter (M5, DataLoader) |
-| ------------------------ | --------- | ---------------------- |
-| Databasfrågor, turlistan | 139       | 4                      |
 | Mätning | Före (M4) | Efter (M5, DataLoader & Mongo) |
 | ---------------------------------------------------------- | --------- | ------------------------------ |
 | **Turlistan (50 turer, utan logs)**<br>`tours(limit: 50) { id title distanceM user { displayName } guide { title } photos { id } }` | 139 | **4** (Postgres) |
 | **Turlistan (50 turer, med logs)**<br>`tours(limit: 50) { id title user { displayName } guide { title } photos { id } logs { recordedAt } }` | 189 | **5** (4 Postgres + 1 Mongo) |
 | **Turdetalj (en tur med alla mätpunkter)**<br>`tour(id: 1) { id title logs { recordedAt lat elevationM } }` | 2 | **2** (1 Postgres + 1 Mongo) |
 
-- **Före:** 1 + 50 user + 38 guide + 50 photos – en fråga per tur och relation (N+1).
-- **Efter:** 1 tours + 1 user + 1 guide + 1 photos – varje loader samlar alla id:n i en `where … = any($1)`.
 - **Turlistan utan logs:**
   - **Före:** 1 + 50 user + 38 guide + 50 photos = 139 frågor – en fråga per tur och relation (N+1).
   - **Efter:** 1 tours + 1 user + 1 guide + 1 photos = 4 frågor – varje loader samlar alla id:n i en `where … = any($1)`.
@@ -131,21 +121,39 @@ Turlistan och turdetaljer i GraphQL mätt på seedad dev-databas och migrerad Mo
 
 ## CI/CD Pipeline
 
-Projektet använder GitHub Actions (`main-protection`) för automatisk validering vid push och PR mot `main`:
-Projektet använder GitHub Actions (`main-protection`) med fyra jobb för automatisk validering vid push och PR mot `main`:
+Projektet använder GitHub Actions (`main-protection`) med fem samverkande jobb för automatisk validering vid Pull Requests och automatisk driftsättning vid push mot `main`:
 
 * **Miljö:** Node.js 22 (Ubuntu)
-* **Steg:**
-  1. Kodkontroll (`npm run lint` & `npm run format:check`)
-  2. Tester (`npm test`)
-  3. Bygge (`npm run build`)
-  4. Docker image-bygge & publicering till GHCR (`ghcr.io`) vid push till `main` (se [docs/pipeline.md](docs/pipeline.md))
-1. **Kvalitet (`quality`)**: Kodkontroll (`npm run lint` & `npm run format:check`), typkontroll med GraphQL Codegen (`npm run typecheck`) och enhetstester (`npm test`).
-2. **Integration (`integration`)**: Kör integrationstester mot API:et (`npm run test:api`) mot riktiga Postgres 16- och MongoDB 8.2-databaser (körda som services i CI). Databaserna seedas (`npm run seed`) och loggarna migreras (`npm run migrate:logs`) innan testerna körs.
-3. **Bygg (`build`)**: Bygger Vue-klientens produktionsfiler (`npm run build`).
-4. **Image (`image`)**: Docker image-bygge (multi-stage) & publicering till GitHub Packages (`ghcr.io`) vid push till `main` (se [docs/pipeline.md](docs/pipeline.md)).
+* **Jobb:**
+  1. **Kvalitet (`quality`)**: Statisk kodanalys (`npm run lint` & `npm run format:check`), typkontroll med GraphQL Codegen (`npm run typecheck` för både API och Vue-klienten) och enhetstester (`npm test`).
+  2. **Integration (`integration`)**: Kör integrationstester mot API:et (`npm run test:api`) mot riktiga PostgreSQL 16- och MongoDB 8.2-databaser (körda som container services i CI). Databaserna seedas (`npm run seed`) och GPS-loggarna migreras (`npm run migrate:logs`) innan testerna körs.
+  3. **Bygg (`build`)**: Bygger Vue-klientens produktionsfiler (`npm run build`).
+  4. **Image (`image`)**: Docker image-bygge (multi-stage) och publicering till GitHub Packages (`ghcr.io`) vid push till `main`. Körs efter att `build` är godkänt (`needs: [build]`).
+  5. **Deploy (`deploy`)**: Automatisk driftsättning till **Azure Container Apps** (`azure-staging`) vid push till `main`. Körs först när både `image` och `integration` är godkända (`needs: [image, integration]`).
 
-## Deploy
+Se fullständig arkitektur och flödesdiagram i [docs/pipeline.md](docs/pipeline.md).
+
+## I molnet (M6)
+
+Staging kör i **Azure Container Apps** som en app med fyra containrar (`infra/azure/staging.yaml`). Skapa den en gång med `infra/azure/skapa-staging.sh`, ge pipelinen en identitet med `infra/azure/identitet.sh` (OIDC – inga lösenord i GitHub, bara id:n som variabler på miljön `azure-staging`); därefter deployar pipelinen vid varje merge till `main` (jobbet *Deploy → Azure staging*, se `docs/pipeline.md`): byter image till commitens sha, väntar tills `/api/health` svarar med samma sha, röktestar `/graphql`. Appen skalar till noll mellan passen: första anropet väcker den (räkna med en minut), och databaserna seedas om vid varje kallstart (`SEED_ON_START=1`). Beslutet och alternativen står i `docs/decisions/hosting.md`.
+
+Staging: https://utpost-staging.blackglacier-52e63275.swedencentral.azurecontainerapps.io
+
+### Arkitektur & Detaljer
+- **Sidecar-arkitektur i Container Apps:**
+  Hela stacken driftsätts som en gemensam Azure Container App med fyra containrar (sidecars) som delar `localhost`:
+  - `client`: Nginx (`:80`), tar emot all extern trafik, levererar de statiska SPA-filerna och proxar `/api/` samt `/graphql` internt.
+  - `api`: Node.js 22 Express (`:4000`), GraphQL- och REST-backend. Kör automatisk seedning vid uppstart (`SEED_ON_START=1`).
+  - `postgres` (PostgreSQL 16) & `mongo` (MongoDB 8.2): Isolerade databaser för staging.
+- **Skalning till noll:** Applikationen är konfigurerad för att kunna skala ner till 0 repliker vid inaktivitet för att spara resurser inom gratiskvoten.
+- **Lösenordsfri autentisering (OIDC):** Driftsättningen loggar in mot Azure med GitHubs OpenID Connect-identitet (`azure/login@v3`). Inga Azure-lösenord eller client secrets sparas i GitHub – endast icke-känsliga miljövariabler (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_RG`, `AZURE_APP`, `AZURE_URL`).
+- **Deterministiska revisioner:** Varje deploy uppdaterar `api` och `client` med unika revision-suffix (`sha-<commit>-api` och `sha-<commit>`), vilket gör varje driftsättning spårbar till exakt git-commit.
+- **Köade deployer (`concurrency`):** `group: deploy-staging` med `cancel-in-progress: false` säkerställer att deployer ställs i kö och aldrig avbryter varandra mitt i en revision.
+- **Hälsokontroll & Röktest:** Pipelinen pollar `/api/health` tills den nya revisionen är aktiv, följt av ett röktest mot `/graphql` genom Nginx-proxyn för att verifiera att hela datakedjan (Nginx → API → Postgres) svarar korrekt med data ur databasen.
+- **Infrastruktur & Setup:** Skript och YAML-mallar finns under `infra/azure/`:
+  - `infra/azure/skapa-staging.sh`: Skapar resursgrupp, Container Apps-miljö och driftsätter appen ur `staging.yaml`.
+  - `infra/azure/identitet.sh`: Skapar Service Principal med federerad OIDC-inloggning och konfigurerar GitHub-miljön `azure-staging`.
+  - `infra/azure/staging.yaml`: Deklarativ specifikation för Container Appen och dess sidecars.
 
 ## Branchstrategi
 
@@ -169,7 +177,7 @@ Efter varje avslutad delfunktion.
 
 **Vad krävs för att godkänna en PR?**
 - Minst 1 godkännande
-- CI/tester ska vara gröna (inga på plats i nuläget)
+- CI/tester ska vara gröna (quality, integration och build)
 - PR-mallen ska vara ifylld
 
 **Hur når vi varandra?**

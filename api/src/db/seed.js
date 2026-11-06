@@ -18,7 +18,7 @@ const bodyHtml = (title, region) => `
 <ul><li>Vindskydd vid halva sträckan</li><li>Ingen service utmed leden</li><li>Mobiltäckning delvis</li></ul>
 <p><em>Senast granskad av redaktionen.</em></p>`.trim();
 
-const run = async () => {
+export const seed = async ({ closePool = false } = {}) => {
   await createTables();
   await pool.query('truncate photos, tour_logs, tours, guides, users restart identity');
 
@@ -90,10 +90,16 @@ const run = async () => {
   }
 
   console.log(`Seed klar: 12 användare, 40 guider, 200 turer, ${logCount} loggpunkter.`);
-  await pool.end();
+  if (closePool) {
+    await pool.end();
+  }
 };
 
-run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+import { fileURLToPath } from 'node:url';
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  seed({ closePool: true }).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
