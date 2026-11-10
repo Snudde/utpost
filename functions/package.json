@@ -1,0 +1,17 @@
+{
+  "name": "@utpost/functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Utposts bildbearbetning som en Azure Function (M7). Eget paket, inte en workspace – deploypaketet ska vara självbärande.",
+  "type": "module",
+  "main": "src/*.js",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.16.5"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

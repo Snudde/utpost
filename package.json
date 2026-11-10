@@ -13,6 +13,7 @@
     "dev:api": "npm run dev --workspace=api",
     "seed": "npm run seed --workspace=api",
     "dev:client": "npm run dev --workspace=client",
+    "dev:functions": "npm --prefix functions start",
     "lint": "npm run lint --workspace=client",
     "format": "npm run format --workspace=client",
     "format:check": "npm run format:check --workspace=client",
