@@ -1,60 +1,87 @@
 import { Router } from 'express';
 import { pool } from '../db/client.js';
+import { config } from '../config.js';
 
 export const photosRouter = Router();
 
-// Skalar om uppladdade bilder till fyra storlekar och räknar ut en enkel
-// bildsignatur så att vi kan hitta dubbletter. Ligger i request-tråden.
-const SIZES = [1600, 800, 400, 160];
+const MAX_PIXELS = 50_000_000;
 
-const resize = (pixels, width, height, targetWidth) => {
-  const scale = width / targetWidth;
-  const targetHeight = Math.round(height / scale);
-  const out = new Uint8Array(targetWidth * targetHeight * 4);
-  for (let y = 0; y < targetHeight; y++) {
-    for (let x = 0; x < targetWidth; x++) {
-      const sx = Math.floor(x * scale);
-      const sy = Math.floor(y * scale);
-      const src = (sy * width + sx) * 4;
-      const dst = (y * targetWidth + x) * 4;
-      out[dst] = pixels[src];
-      out[dst + 1] = pixels[src + 1];
-      out[dst + 2] = pixels[src + 2];
-      out[dst + 3] = pixels[src + 3];
-    }
+/** Anropar bildfunktionen (Azure Functions lokalt eller i molnet) och returnerar varianter + mätdata. */
+const callImageFunction = async ({ filename, width, height }) => {
+  const headers = { 'Content-Type': 'application/json' };
+  if (config.imageFunctionKey) {
+    headers['x-functions-key'] = config.imageFunctionKey;
   }
-  return { pixels: out, width: targetWidth, height: targetHeight };
-};
 
-const signature = (pixels) => {
-  let hash = 0;
-  for (let i = 0; i < pixels.length; i += 4) {
-    const gray = (pixels[i] * 299 + pixels[i + 1] * 587 + pixels[i + 2] * 114) / 1000;
-    hash = (hash * 31 + Math.round(gray)) % 2147483647;
+  let fnRes;
+  try {
+    fnRes = await fetch(config.imageFunctionUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ filename, width, height }),
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch (err) {
+    const error = new Error(`Kunde inte nå bildfunktionen: ${err.message}`);
+    error.status = 502;
+    throw error;
   }
-  return hash.toString(16);
+
+  const body = await fnRes.json().catch(() => null);
+  if (!fnRes.ok || !body || !Array.isArray(body.variants)) {
+    const error = new Error(body?.error ?? `Bildfunktionen svarade ${fnRes.status}`);
+    error.status = fnRes.status === 400 ? 400 : 502;
+    throw error;
+  }
+
+  return body;
 };
 
 photosRouter.post('/', async (req, res) => {
-  const { tourId, filename, width, height } = req.body;
+  const { tourId, filename, width, height } = req.body ?? {};
+  const parsedTourId = Number(tourId);
 
-  // Klienten skickar inte pixeldata än, så vi genererar en platshållare
-  // med samma dimensioner. Samma arbete, samma tid.
-  const pixels = new Uint8Array(width * height * 4).fill(128);
+  if (
+    !Number.isInteger(parsedTourId) ||
+    parsedTourId < 1 ||
+    typeof filename !== 'string' ||
+    !filename.trim() ||
+    !Number.isInteger(width) ||
+    !Number.isInteger(height) ||
+    width < 1 ||
+    height < 1 ||
+    width * height > MAX_PIXELS
+  ) {
+    return res.status(400).json({
+      error: 'Skicka tourId, filename samt positiva heltal för width och height (högst 50 MP).',
+    });
+  }
 
   const started = Date.now();
-  const variants = SIZES.map((size) => {
-    const scaled = resize(pixels, width, height, size);
-    return { size, signature: signature(scaled.pixels) };
-  });
-  const ms = Date.now() - started;
+  let processed;
+  try {
+    processed = await callImageFunction({ filename: filename.trim(), width, height });
+  } catch (err) {
+    return res.status(err.status ?? 502).json({ error: err.message });
+  }
 
   const result = await pool.query(
     'insert into photos (tour_id, filename, width, height) values ($1,$2,$3,$4) returning *',
-    [tourId, filename, width, height],
+    [parsedTourId, filename.trim(), width, height],
   );
 
-  res.json({ ...result.rows[0], variants, processingMs: ms });
+  const apiMs = Date.now() - started;
+  const { variants, processingMs, coldStart, instance, node } = processed;
+
+  res.json({
+    ...result.rows[0],
+    variants,
+    processingMs,
+    coldStart,
+    instance,
+    node,
+    apiMs,
+  });
 });
 
 photosRouter.get('/tour/:tourId', async (req, res) => {

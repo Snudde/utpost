@@ -37,7 +37,7 @@ app.http('process-image', {
 
     // context.log hamnar i func start-terminalen lokalt och i Application Insights/loggströmmen i Azure.
     context.log(
-      `process-image: ${filename} ${width}x${height} → ${variants.length} varianter på ${processingMs} ms` +
+      `process-image (från pipelinen): ${filename} ${width}x${height} → ${variants.length} varianter på ${processingMs} ms` +
         (wasColdStart ? ' (kallstart)' : ''),
     );
 

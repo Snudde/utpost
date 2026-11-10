@@ -42,6 +42,8 @@ services:
       DATABASE_URL: postgres://utpost:utpost@postgres:5432/utpost
       MONGO_URL: mongodb://utpost:utpost@mongo:27017/utpost?authSource=admin
       SEED_ON_START: "1"
+      IMAGE_FUNCTION_URL: ${IMAGE_FUNCTION_URL:-http://host.docker.internal:7071/api/process-image}
+      IMAGE_FUNCTION_KEY: ${IMAGE_FUNCTION_KEY:-}
     # Inga ports: browsern når API:et genom nginx i client (/api och /graphql skickas vidare
     # till api:4000 inne i nätverket). Felsöka API:et direkt? Lägg tillbaka  ports: - "4000:4000"
     depends_on:

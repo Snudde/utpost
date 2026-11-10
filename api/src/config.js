@@ -8,4 +8,7 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-only-for-local-testing',
   port: Number(process.env.PORT ?? 4000),
   uploadDir: './uploads',
+  // M7: adress och valfri funktionsnyckel till bildfunktionen (lokalt func start på 7071).
+  imageFunctionUrl: process.env.IMAGE_FUNCTION_URL ?? 'http://localhost:7071/api/process-image',
+  imageFunctionKey: process.env.IMAGE_FUNCTION_KEY ?? '',
 };
