@@ -1,3 +1,5 @@
+# M6: jobbet Deploy → Azure staging byter image i Container Apps efter merge till main.
+# M7: jobbet Deploy → Azure Functions lägger upp functions/ i function-appen efter merge till main.
 name: main-protection
 
 on:
@@ -227,4 +229,68 @@ jobs:
             echo "$SVAR"
             echo "$SVAR" | grep -q '"displayName"' || { echo "::error::GraphQL svarade utan data"; exit 1; }
             echo "✅ /graphql svarar via nginx, med data ur en seedad databas"
+
+  # M7: merge till main → bildfunktionen i Azure Functions kör den nya koden i functions/.
+  # Oberoende av Deploy → Azure staging: API:et läser funktionens adress ur miljön (IMAGE_FUNCTION_URL),
+  # så ordningen mellan de två deployjobben spelar ingen roll. Samma miljö och samma OIDC-identitet som
+  # M6 – Contributor på resursgruppen räcker för function-appen. Function-appen skapas en gång av
+  # infra/azure/skapa-funktion.sh; jobbet skapar inget, det lägger bara upp ett nytt paket.
+  deploy-function:
+    name: Deploy → Azure Functions
+    runs-on: ubuntu-latest
+    needs: [quality]                                 # functions/ har inga egna tester – men ingen deploy av en röd main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: azure-staging                            # AZURE_FUNCTION_APP ligger här bredvid id:n från M6
+    permissions:
+      id-token: write                                # OIDC-token, inget lösenord
+      contents: read
+    concurrency:
+      group: deploy-function
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      # Paketet byggs här, inte i Azure: node_modules följer med i zippen. Därför är functions/ ett eget
+      # paket med egen lockfil, inte en workspace – annars hamnar beroendena i rotens node_modules.
+      - name: Installera funktionens beroenden (bara det som körs)
+        working-directory: functions
+        run: npm ci --omit=dev
+
+      - name: Logga in i Azure med GitHubs identitet (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Flex Consumption: paketet läggs i en blob-container i appens storage-konto och appen startar om från det.
+      - name: Lägg upp functions/ i function-appen
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ vars.AZURE_FUNCTION_APP }}
+          package: functions
+          respect-funcignore: true                   # local.settings*.json följer inte med
+
+      - name: Röktest – process-image svarar med fyra varianter
+        env:
+          APP: ${{ vars.AZURE_FUNCTION_APP }}
+          RG: ${{ vars.AZURE_RG }}
+        run: |
+          # Nyckeln ligger inte i GitHub: jobbet hämtar den med sin identitet och maskerar den i loggen.
+          KEY=$(az functionapp keys list --name "$APP" --resource-group "$RG" --query functionKeys.default --output tsv)
+          echo "::add-mask::$KEY"
+          [ -n "$KEY" ] || { echo "::error::Fick ingen funktionsnyckel för $APP i $RG"; exit 1; }
+          URL="https://$(az functionapp show --name "$APP" --resource-group "$RG" --query "defaultHostName || properties.defaultHostName" --output tsv)/api/process-image"
+          # Första anropet efter en deploy är en kallstart – därför 60 s och inte 20.
+          SVAR=$(curl -fsS --max-time 60 -X POST "$URL" -H "x-functions-key: $KEY" \
+            -H 'Content-Type: application/json' -d '{"filename":"rooktest.jpg","width":400,"height":300}')
+          echo "$SVAR"
+          echo "$SVAR" | grep -q '"variants"' || { echo "::error::process-image svarade utan variants"; exit 1; }
+          echo "✅ $URL svarar"
 
