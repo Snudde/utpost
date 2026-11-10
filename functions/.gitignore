@@ -1,0 +1,4 @@
+# M7: local.settings.json är funktionens lokala miljö (som .env för API:et). Den kan innehålla
+# anslutningssträngar och nycklar – committas aldrig. Kopiera local.settings.example.json.
+local.settings.json
+node_modules
