@@ -120,7 +120,7 @@ Turlistan och turdetaljer i GraphQL mätt på seedad dev-databas och migrerad Mo
 
 ## CI/CD Pipeline
 
-Projektet använder GitHub Actions (`main-protection`) med fem samverkande jobb för automatisk validering vid Pull Requests och automatisk driftsättning vid push mot `main`:
+Projektet använder GitHub Actions (`main-protection`) med sex samverkande jobb för automatisk validering vid Pull Requests och automatisk driftsättning vid push mot `main`:
 
 * **Miljö:** Node.js 22 (Ubuntu)
 * **Jobb:**
@@ -128,7 +128,12 @@ Projektet använder GitHub Actions (`main-protection`) med fem samverkande jobb 
   2. **Integration (`integration`)**: Kör integrationstester mot API:et (`npm run test:api`) mot riktiga PostgreSQL 16- och MongoDB 8.2-databaser (körda som container services i CI). Databaserna seedas (`npm run seed`) och GPS-loggarna migreras (`npm run migrate:logs`) innan testerna körs.
   3. **Bygg (`build`)**: Bygger Vue-klientens produktionsfiler (`npm run build`).
   4. **Image (`image`)**: Docker image-bygge (multi-stage) och publicering till GitHub Packages (`ghcr.io`) vid push till `main`. Körs efter att `build` är godkänt (`needs: [build]`).
-  5. **Deploy (`deploy`)**: Automatisk driftsättning till **Azure Container Apps** (`azure-staging`) vid push till `main`. Körs först när både `image` och `integration` är godkända (`needs: [image, integration]`).
+
+### Deploy
+Två deployjobb efter varje merge till `main`, oberoende av varandra (se `docs/pipeline.md`):
+
+- *Deploy → Azure staging* (M6): staging skapas en gång med `infra/azure/skapa-staging.sh`, jobbet byter image till commitens sha.
+- *Deploy → Azure Functions* (M7): function-appen skapas en gång med `infra/azure/skapa-funktion.sh`, jobbet lägger upp `functions/` och röktestar `process-image`. Kräver variabeln `AZURE_FUNCTION_APP` på miljön `azure-staging`; samma OIDC-identitet som M6. Nyckeln ligger inte i GitHub – jobbet hämtar den.
 
 Se fullständig arkitektur och flödesdiagram i [docs/pipeline.md](docs/pipeline.md).
 

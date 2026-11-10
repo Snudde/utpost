@@ -41,6 +41,9 @@ flowchart TD
       D_WAIT --> D_SMOKE["4. Röktest mot GraphQL (/graphql)"]
     end
     J_DEP --> DEPLOY_STEPS
+
+    J_QUAL --> DF["Deploy → Azure Functions<br/>npm ci --omit=dev i functions/ · OIDC-inloggning · functions-action · röktest process-image"]
+    DF --> FN["funktionen kör den mergade committen"]
   end
 ```
 
@@ -140,12 +143,14 @@ Tiden ändras inte mätbart. React-klienten hade bara tre egna beroenden (`react
 | **Bygg (`build`)** | Bygger Vue-klienten för produktion | Trasiga frontend-byggen | ~1 min |
 | **Image (`image`)** | Docker buildx & push till GHCR | Image-byggfel, saknade filer i container | ~1,5 min |
 | **Deploy (M6)** | `az containerapp update … --image …:sha-…` ×2 (api, client – två revisioner per deploy), vänta på `sha` i `/api/health` och på sista revisionen, röktest `/graphql` | En image som inte startar, en nginx-mall som inte renderas, en app som inte kommer upp – innan någon användare ser det | ~1,5 min (bara på `main`; väcks appen från noll tillkommer ~1 min) |
+| **Deploy → Azure Functions (M7)** | `npm ci --omit=dev` i `functions/`, `Azure/functions-action@v1`, röktest: `POST /api/process-image` med nyckeln hämtad i jobbet | En funktion som inte startar i Azure, ett paket utan `node_modules`, fel app-namn | ______ (bara på `main`; röktestet är en kallstart) |
 
 ---
 
 ## Branch Protection & Deploy-strategi
 
 - *Deploy → Azure staging* är **inte** en status check: den körs efter merge, på `main`. Blir den röd är `main` ändå korrekt – det är staging som inte uppdaterades. Rätta och merga igen, eller rulla tillbaka med `az containerapp update … --image <förra sha-taggen>` (varje image i GHCR har sin sha-tagg kvar).
+- *Deploy → Azure Functions* (M7) är inte heller en status check. **Två deployjobb, oberoende av varandra** – API:et läser funktionens adress ur miljön, så ordningen spelar ingen roll.
 
 ---
 
