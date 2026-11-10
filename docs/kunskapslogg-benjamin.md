@@ -64,7 +64,7 @@ Bli bättre på att hantera typer och förstå dess användning i backend. Vill 
 
 ### Vad jag förstått
 
-**Fullstack1 1, 10 och 19:** Grundläggande förståelse för noSQL databaser och dess syfte. Fördelar och nackdelar med SQL respektive noSQL.
+**Fullstack 1, 10 och 19:** Grundläggande förståelse för noSQL databaser och dess syfte. Fördelar och nackdelar med SQL respektive noSQL.
 
 **Cloude 4 och 7:** Lärt mig om docker och hela kedjan, dockerfile - docker-compose. Syftet med docker-compose och att starta flera containrar samtidigt. Problematiken med utvecklingsmiljö där alla kör lokalt (olika paket). 
 
@@ -82,7 +82,7 @@ Fördjupning i noSQL och mongoDB med mer praktiskt användande för att få bät
 
 ### Vad jag förstått
 
-**Fullstack1 2, 11 och 19:** Översiktlig förståelse i vad graphQL är och dess användningsområden. Skapat förståelse för hur man kombinerar ett restAPI med graphQL och vad dess arkitektur innebär. Skapat förståelse i hur data-lagring och prestanda påverkas beroende av arkitektoniska beslut. 
+**Fullstack 2, 11 och 19:** Översiktlig förståelse i vad graphQL är och dess användningsområden. Skapat förståelse för hur man kombinerar ett restAPI med graphQL och vad dess arkitektur innebär. Skapat förståelse i hur data-lagring och prestanda påverkas beroende av arkitektoniska beslut. 
 
 **Cloude 3, 4 och 10:** Förståelse för hur man kan effektivisera data-lagring i en dockerfile med hjälp av multi-stage och nginx. Lärt mig att bygga och paketera container-images i en pipeline för att senare kunna drivsätta i en molnmiljö.
 
@@ -93,6 +93,59 @@ Fördjupning i noSQL och mongoDB med mer praktiskt användande för att få bät
 ### Kvar att förstå
 
 Djupare förståelse för graphQL och hur man praktiskt skriver resolvers och mutationer. Hur man bygger ett stabilt skottsäkert graphQL API och hur man löser N+1 propblemet som uppstår.
+
+### M5 Vecka 43 – Typad end to end
+
+**Kursmål: Fullstack 2, 11, 12, Cloud 6, 11** 
+
+### Vad jag förstått
+
+**Fullstack 2, 11 och 12:** Lärt mig hur man löser N+1 problemet i GraphQL med DataLoader så att databasfrågorna batchas per anrop, och varför svaren måste komma tillbaka i rätt ordning med hjälp av en Map. Jag har också fått förståelse för hur turloggar migreras till MongoDB och hur codegen tillsammans med urql kopplar ihop API-schemat med klientens typer så fel fångas i typecheck.
+
+**Cloude 6, 11:** Förståelse för skillnaden mellan mockade klienttester och riktiga integrationstester mot Postgres och MongoDB i backend. Lärt mig hur man sätter upp ett integration-jobb i pipelinen med databas-services som seedas före testerna körs, och hur man skriver ett test som direkt märker om N+1 kommer tillbaka.
+
+### Var det syns i mitt arbete
+
+**Branches jag jobbat i:** "migrate-meassurements, integration-test"
+
+### Kvar att förstå
+
+Jag vill få en bättre förståelse för hur urql:s cache fungerar när data ändras via mutationer. Även hur man i nästa steg tar våra images och kör dem i en riktig molnmiljö.
+
+### M6 Vecka 44 – I molnet
+
+**Kursmål: Cloud 1, 7, 10** 
+
+### Vad jag förstått
+
+**Cloude 1, 7, 10:** Under veckan har jag lärt mig jämföra molnplattformar och varför vi valde Azure Container Apps för staging framför till exempel Cloud Run och ECS på Fargate. Jag har också förstått hur man gör en app molnfärdig genom att läsa konfiguration utifrån, rensa bort och rotera hemligheter samt skicka med commitens sha. Slutligen hur pipelinen loggar in i Azure utan lösenord med hjälp av OIDC.
+
+### Var det syns i mitt arbete
+
+**Branches jag jobbat i:** "deploy-to-azure"
+
+### Kvar att förstå
+
+Hur man sätter upp managed databaser i en riktig produktionsmiljö och hur man bryter ut tungt CPU-arbete från API:et med serverless.
+
+### M7 Vecka 45 – Ut ur request-tråden 
+
+**Kursmål: Cloud 2, 12** 
+
+### Vad jag förstått
+
+**Cloude 2, 12:** Under veckan har jag lärt mig hur man flyttar CPU-tungt arbete ur API:ets enda Node-tråd till en serverless-funktion i Azure Functions, så att resten av API:et fortsätter svara snabbt under last medan funktionen skalar ut per anrop. Jag har också förstått skillnaden mellan portabel kod och plattformsinlåsning, hur funktionsnyckeln skyddas med secretRef och varför Serverless Framework valdes bort. Samt skillnaden mellan kallstart efter vila och en varm instans för svarstiden och hur denna process tar bort CPU-arbetet från API:ets event-loop.
+
+### Var det syns i mitt arbete
+
+**Branches jag jobbat i:** "azure-function, upload-image-azure, m7-implementations"
+
+### Kvar att förstå
+
+Hur man gör flödet helt asynkront med en kö när användaren inte behöver vänta på svaret direkt, samt hur man sätter upp övervakning och larm i Azure.
+
+
+
 
 
 
