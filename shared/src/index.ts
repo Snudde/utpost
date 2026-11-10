@@ -51,6 +51,29 @@ export interface Photo {
   created_at: string
 }
 
+export interface PhotoVariant {
+  size: number
+  signature: string
+}
+
+/** POST /api/photos – begäran */
+export interface UploadPhotoRequest {
+  tourId: number
+  filename: string
+  width: number
+  height: number
+}
+
+/** POST /api/photos – svar från API + Azure Function (M7) */
+export interface UploadPhotoResponse extends Photo {
+  variants: PhotoVariant[]
+  processingMs: number
+  coldStart: boolean
+  instance: string
+  node?: string
+  apiMs: number
+}
+
 export interface Tour {
   id: number
   user_id: number
