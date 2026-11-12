@@ -4,7 +4,8 @@ import { ref } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { useQuery } from '@urql/vue'
 import ProfileView from './ProfileView.vue'
-import { useAuthStore } from '@/stores/session'
+import { useAuthStore } from '@/stores/auth'
+import { setToken } from '@/lib/token'
 
 // Samma mönster som ToursView.test.ts: useQuery mockas, testet handlar om vad vyn gör med svaret.
 vi.mock('@urql/vue', () => ({ useQuery: vi.fn() }))
@@ -20,22 +21,22 @@ const queryResult = (result: { data?: unknown; error?: unknown }) =>
 const renderView = () =>
   render(ProfileView, { global: { stubs: { RouterLink: { template: '<a><slot /></a>' } } } })
 
+// M8: token ligger i minnet (lib/token.ts), inte i storen. Token först – isLoggedIn räknas om när user ändras.
 const logIn = () => {
-  const session = useAuthStore()
-  session.user = {
+  setToken('token')
+  useAuthStore().user = {
     id: 7,
     email: 'lisa@example.com',
     display_name: 'Lisa Waller',
     role: 'member',
     created_at: '2026-09-01T00:00:00.000Z',
   }
-  session.token = 'token'
 }
 
 describe('ProfileView', () => {
   beforeEach(() => {
-    localStorage.clear()
     setActivePinia(createPinia())
+    setToken(null)
   })
 
   afterEach(() => {

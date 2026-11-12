@@ -1,8 +1,17 @@
 <script setup>
-import { RouterLink } from 'vue-router'
-import { useAuthStore } from '@/stores/session'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const sessionStore = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+
+// Den som loggar ut på en skyddad sida (/profil, /turer/:id/bild) ska inte bli kvar där –
+// guarden körs bara vid navigering. Övriga sidor går lika bra att läsa utloggad.
+const logout = () => {
+  sessionStore.logout()
+  if (route.meta.requiresAuth) router.push('/')
+}
 </script>
 <template>
   <header>
@@ -13,13 +22,13 @@ const sessionStore = useAuthStore()
         <RouterLink to="/turer">Turer</RouterLink>
       </div>
       <div class="login-area">
-        <template v-if="sessionStore.isAuthenticated">
+        <template v-if="sessionStore.isLoggedIn">
           <RouterLink to="/profil" class="user-info">{{
             sessionStore.user?.display_name
           }}</RouterLink>
-          <button class="logout-btn" @click="sessionStore.logout">Logga ut</button>
+          <button type="button" class="logout-btn" @click="logout">Logga ut</button>
         </template>
-        <RouterLink v-else to="/login">Login</RouterLink>
+        <RouterLink v-else to="/logga-in">Logga in</RouterLink>
       </div>
     </nav>
   </header>

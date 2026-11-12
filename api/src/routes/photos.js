@@ -1,90 +1,89 @@
 import { Router } from 'express';
 import { pool } from '../db/client.js';
 import { config } from '../config.js';
+import { requireUser } from '../lib/auth.js';
+import { wrap } from '../lib/wrap.js';
+import { validate } from '../lib/validate.js';
+import { photoUploadSchema, idParam } from '../lib/schemas.js';
 
 export const photosRouter = Router();
 
+// Samma gräns som funktionen själv har. photoUploadSchema tar varje sida för sig (högst 20 000 px),
+// men 20 000 × 20 000 är 400 MP – det är ytan som avgör hur mycket minne funktionen behöver.
 const MAX_PIXELS = 50_000_000;
 
-/** Anropar bildfunktionen (Azure Functions lokalt eller i molnet) och returnerar varianter + mätdata. */
-const callImageFunction = async ({ filename, width, height }) => {
-  const headers = { 'Content-Type': 'application/json' };
-  if (config.imageFunctionKey) {
-    headers['x-functions-key'] = config.imageFunctionKey;
-  }
+// M7 (skuld 8): bildbearbetningen ligger inte längre i request-tråden. Omskalningen till fyra
+// storlekar och signaturerna görs av funktionen process-image (functions/) – lokalt i func start,
+// i molnet i Azure Functions. API:et lämnar över jobbet, väntar på svaret och sparar raden först
+// när funktionen lyckats – annars blir det en bild i databasen som inte har några varianter.
+// M8 (skuld 9): bara inloggade får ladda upp, och bara på sin egen tur. Måtten valideras innan
+// något sparas eller skickas till funktionen (photoUploadSchema: heltal, högst 20 000 px).
+photosRouter.post(
+  '/',
+  requireUser,
+  validate(photoUploadSchema),
+  wrap(async (req, res) => {
+    const started = Date.now();
+    const { tourId, filename, width, height } = req.body;
+    if (width * height > MAX_PIXELS) {
+      return res.status(400).json({ error: 'bilden är för stor (högst 50 MP)' });
+    }
 
-  let fnRes;
-  try {
-    fnRes = await fetch(config.imageFunctionUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ filename, width, height }),
-      signal: AbortSignal.timeout(60_000),
+    const tour = await pool.query('select user_id from tours where id = $1', [tourId]);
+    if (!tour.rows[0]) return res.status(404).json({ error: 'turen finns inte' });
+    if (tour.rows[0].user_id !== req.user.id && req.user.role !== 'editor') {
+      return res.status(403).json({ error: 'inte din tur' });
+    }
+
+    let processed;
+    try {
+      const response = await fetch(config.imageFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Funktionsnyckeln (authLevel: 'function'). Tom lokalt – func start kräver ingen nyckel.
+          ...(config.imageFunctionKey && { 'x-functions-key': config.imageFunctionKey }),
+        },
+        body: JSON.stringify({ filename, width, height }),
+        signal: AbortSignal.timeout(30_000), // en kallstart i molnet tar sekunder, inte en halv minut
+      });
+      const body = await response.json().catch(() => null);
+      // 400 från funktionen = bilden går inte att bearbeta; det är anroparens fel, inte tjänstens.
+      if (response.status === 400) {
+        return res.status(400).json({ error: body?.error ?? 'bilden kan inte bearbetas' });
+      }
+      if (!response.ok || !Array.isArray(body?.variants)) throw new Error(`funktionen svarade ${response.status}`);
+      processed = body;
+    } catch (err) {
+      // err.cause säger varför fetch misslyckades: ECONNREFUSED = ingen lyssnar (func start körs inte?).
+      // Detaljerna går till loggen, inte till anroparen.
+      console.error(`Bildtjänsten (${config.imageFunctionUrl}): ${err.message}${err.cause ? ` – ${err.cause.code ?? err.cause.message}` : ''}`);
+      return res.status(502).json({ error: 'bildtjänsten svarar inte' });
+    }
+
+    const result = await pool.query(
+      'insert into photos (tour_id, filename, width, height) values ($1,$2,$3,$4) returning *',
+      [tourId, filename, width, height],
+    );
+
+    res.json({
+      ...result.rows[0],
+      variants: processed.variants,
+      processingMs: processed.processingMs, // funktionens tid för själva bildarbetet
+      coldStart: processed.coldStart,
+      instance: processed.instance,
+      node: processed.node,
+      apiMs: Date.now() - started, // API:ets tid för hela anropet: databasen + funktionen + nätet
     });
-  } catch (err) {
-    const error = new Error(`Kunde inte nå bildfunktionen: ${err.message}`);
-    error.status = 502;
-    throw error;
-  }
+  }),
+);
 
-  const body = await fnRes.json().catch(() => null);
-  if (!fnRes.ok || !body || !Array.isArray(body.variants)) {
-    const error = new Error(body?.error ?? `Bildfunktionen svarade ${fnRes.status}`);
-    error.status = fnRes.status === 400 ? 400 : 502;
-    throw error;
-  }
-
-  return body;
-};
-
-photosRouter.post('/', async (req, res) => {
-  const { tourId, filename, width, height } = req.body ?? {};
-  const parsedTourId = Number(tourId);
-
-  if (
-    !Number.isInteger(parsedTourId) ||
-    parsedTourId < 1 ||
-    typeof filename !== 'string' ||
-    !filename.trim() ||
-    !Number.isInteger(width) ||
-    !Number.isInteger(height) ||
-    width < 1 ||
-    height < 1 ||
-    width * height > MAX_PIXELS
-  ) {
-    return res.status(400).json({
-      error: 'Skicka tourId, filename samt positiva heltal för width och height (högst 50 MP).',
-    });
-  }
-
-  const started = Date.now();
-  let processed;
-  try {
-    processed = await callImageFunction({ filename: filename.trim(), width, height });
-  } catch (err) {
-    return res.status(err.status ?? 502).json({ error: err.message });
-  }
-
-  const result = await pool.query(
-    'insert into photos (tour_id, filename, width, height) values ($1,$2,$3,$4) returning *',
-    [parsedTourId, filename.trim(), width, height],
-  );
-
-  const apiMs = Date.now() - started;
-  const { variants, processingMs, coldStart, instance, node } = processed;
-
-  res.json({
-    ...result.rows[0],
-    variants,
-    processingMs,
-    coldStart,
-    instance,
-    node,
-    apiMs,
-  });
-});
-
-photosRouter.get('/tour/:tourId', async (req, res) => {
-  const result = await pool.query('select * from photos where tour_id = $1', [req.params.tourId]);
-  res.json(result.rows);
-});
+photosRouter.get(
+  '/tour/:tourId',
+  wrap(async (req, res) => {
+    const id = idParam.safeParse(req.params.tourId);
+    if (!id.success) return res.status(400).json({ error: 'ogiltigt id' });
+    const result = await pool.query('select * from photos where tour_id = $1', [id.data]);
+    res.json(result.rows);
+  }),
+);

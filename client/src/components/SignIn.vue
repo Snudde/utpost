@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/session'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { safeRedirect } from '@/lib/redirect'
 
 const router = useRouter()
+const route = useRoute()
 const sessionStore = useAuthStore()
 
 const email = ref('')
@@ -20,7 +22,7 @@ async function handleSubmit() {
       email: email.value,
       password: password.value,
     })
-    router.push('/')
+    router.push(safeRedirect(route.query.till))
   } catch (err) {
     if (err instanceof Error) {
       errorMessage.value = err.message
@@ -37,9 +39,23 @@ async function handleSubmit() {
   <form class="login" @submit.prevent="handleSubmit">
     <h1>Logga in</h1>
     <label for="email">E-post</label>
-    <input id="email" v-model="email" type="email" placeholder="namn@exempel.se" required />
+    <input
+      id="email"
+      v-model="email"
+      type="email"
+      autocomplete="username"
+      placeholder="namn@exempel.se"
+      required
+    />
     <label for="password">Lösenord</label>
-    <input id="password" v-model="password" type="password" placeholder="Lösenord" required />
+    <input
+      id="password"
+      v-model="password"
+      type="password"
+      autocomplete="current-password"
+      placeholder="Lösenord"
+      required
+    />
     <p v-if="errorMessage" class="error" role="alert">
       {{ errorMessage }}
     </p>

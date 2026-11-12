@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/session'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { safeRedirect } from '@/lib/redirect'
 
 const router = useRouter()
+const route = useRoute()
 const sessionStore = useAuthStore()
 
 const displayName = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const errorMessage = ref<String | null>(null)
+const errorMessage = ref('')
 const isLoading = ref(false)
 
 async function handleSubmit() {
-  errorMessage.value = null
+  errorMessage.value = ''
   // Enkel validering innan vi anropar servern
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Lösenorden matchar inte.'
@@ -27,8 +29,8 @@ async function handleSubmit() {
       email: email.value,
       password: password.value,
     })
-    // Skicka till startsidan när registreringen och inloggningen är klar
-    router.push('/')
+    // Samma som inloggningen: tillbaka dit användaren var på väg, annars startsidan
+    router.push(safeRedirect(route.query.till))
   } catch (err) {
     if (err instanceof Error) {
       errorMessage.value = err.message
@@ -45,16 +47,40 @@ async function handleSubmit() {
   <form class="login" @submit.prevent="handleSubmit">
     <h1>Skapa konto</h1>
     <label for="name">Namn</label>
-    <input id="name" v-model="displayName" type="text" placeholder="För- och efternamn" required />
+    <input
+      id="name"
+      v-model="displayName"
+      type="text"
+      autocomplete="name"
+      placeholder="För- och efternamn"
+      required
+    />
     <label for="email">E-post</label>
-    <input id="email" v-model="email" type="email" placeholder="namn@exempel.se" required />
+    <input
+      id="email"
+      v-model="email"
+      type="email"
+      autocomplete="username"
+      placeholder="namn@exempel.se"
+      required
+    />
     <label for="password">Lösenord</label>
-    <input id="password" v-model="password" type="password" placeholder="Minst 6 tecken" required />
+    <!-- minlength 8 = registerSchema i api/src/lib/schemas.js -->
+    <input
+      id="password"
+      v-model="password"
+      type="password"
+      autocomplete="new-password"
+      minlength="8"
+      placeholder="Minst 8 tecken"
+      required
+    />
     <label for="confirmPassword">Upprepa lösenord</label>
     <input
       id="confirmPassword"
       v-model="confirmPassword"
       type="password"
+      autocomplete="new-password"
       placeholder="Upprepa lösenord"
       required
     />

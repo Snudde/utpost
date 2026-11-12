@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuery } from '@urql/vue'
 import { graphql } from '../gql'
-import { useAuthStore } from '@/stores/session'
+import { useAuthStore } from '@/stores/auth'
 
 // Ersätter web/src/pages/Profile.jsx. React-sidan hämtade GET /api/tours (hela raderna, alla
 // mätpunkter) och filtrerade på user_id i webbläsaren. Här ber vi bara om id, titel och ägarens id.
@@ -26,7 +26,7 @@ const router = useRouter()
 
 const { data, error } = useQuery({
   query: MY_TOURS_QUERY,
-  pause: computed(() => !session.isAuthenticated),
+  pause: computed(() => !session.isLoggedIn),
 })
 
 // GraphQL-id:n är strängar, User.id i sessionen är ett tal
@@ -41,7 +41,7 @@ const logout = () => {
 </script>
 
 <template>
-  <p v-if="!session.isAuthenticated || !session.user">Du är inte inloggad.</p>
+  <p v-if="!session.isLoggedIn || !session.user">Du är inte inloggad.</p>
   <div v-else>
     <h1>{{ session.user.display_name }}</h1>
     <p class="muted">{{ session.user.email }} · {{ session.user.role }}</p>
