@@ -1,10 +1,17 @@
-import type { TourDetail, UploadPhotoRequest, UploadPhotoResponse } from '@utpost/shared'
+import type { ApiError, TourDetail, PhotoUploadRequest, PhotoUploadResponse } from '@utpost/shared'
 import { get, post } from '@/api'
 
 export const fetchTour = (id: string): Promise<TourDetail> => get<TourDetail>(`/tours/${id}`)
 
-export const uploadTourPhoto = (payload: UploadPhotoRequest): Promise<UploadPhotoResponse> =>
-  post<UploadPhotoResponse>('/photos', payload)
+// post() kastar inte vid 4xx/5xx (M8) – 401, 403, 400 och 502 kommer tillbaka som { error }.
+// Vi gör om dem till ett fel här, så att vyn visar texten i stället för att tro att det gick.
+export const uploadTourPhoto = async (
+  payload: PhotoUploadRequest,
+): Promise<PhotoUploadResponse> => {
+  const svar = await post<PhotoUploadResponse | ApiError>('/photos', payload)
+  if ('error' in svar) throw new Error(svar.error)
+  return svar
+}
 
 export const readImageDimensions = (file: File): Promise<{ width: number; height: number }> =>
   new Promise((resolve, reject) => {

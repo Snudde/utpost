@@ -1,5 +1,7 @@
+import { pathToFileURL } from 'node:url';
 import { pool } from './client.js';
 import { createTables } from './migrate.js';
+import { hashPassword } from '../lib/password.js';
 
 const REGIONS = ['Jämtland', 'Dalarna', 'Lappland', 'Bohuslän', 'Småland', 'Södermanland', 'Härjedalen', 'Skåne'];
 const DIFFICULTY = ['lätt', 'medel', 'svår'];
@@ -18,17 +20,24 @@ const bodyHtml = (title, region) => `
 <ul><li>Vindskydd vid halva sträckan</li><li>Ingen service utmed leden</li><li>Mobiltäckning delvis</li></ul>
 <p><em>Senast granskad av redaktionen.</em></p>`.trim();
 
-export const seed = async ({ closePool = false } = {}) => {
+// M6: exporteras så att boot.js kan seeda vid start i molnet. Körs filen direkt (npm run seed) stängs poolen efteråt.
+export const seed = async () => {
   await createTables();
   await pool.query('truncate photos, tour_logs, tours, guides, users restart identity');
 
+  // M8: lösenorden lagras som scrypt-hash (lib/password.js), aldrig i klartext. Alla seedade
+  // användare har lösenordet hemligt123; användare 1 är redaktör (role editor).
+  const passwordHash = await hashPassword('hemligt123');
   const userIds = [];
   for (let i = 0; i < 12; i++) {
     const name = `${pick(FIRST)} ${pick(LAST)}`;
-    const email = `${name.toLowerCase().replace(' ', '.')}${i}@example.com`;
+    // M8: två fasta konton att logga in med (resten slumpas): redaktor@utpost.se (role editor, id 1)
+    // och medlem@utpost.se (role member, id 2). Lösenordet är hemligt123 för alla.
+    const email =
+      i === 0 ? 'redaktor@utpost.se' : i === 1 ? 'medlem@utpost.se' : `${name.toLowerCase().replace(' ', '.')}${i}@example.com`;
     const res = await pool.query(
       `insert into users (email, password_hash, display_name, role) values ($1,$2,$3,$4) returning id`,
-      [email, 'plaintext:hemligt123', name, i === 0 ? 'editor' : 'member'],
+      [email, passwordHash, name, i === 0 ? 'editor' : 'member'],
     );
     userIds.push(res.rows[0].id);
   }
@@ -90,16 +99,13 @@ export const seed = async ({ closePool = false } = {}) => {
   }
 
   console.log(`Seed klar: 12 användare, 40 guider, 200 turer, ${logCount} loggpunkter.`);
-  if (closePool) {
-    await pool.end();
-  }
 };
 
-import { fileURLToPath } from 'node:url';
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  seed({ closePool: true }).catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  seed()
+    .then(() => pool.end())
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
 }

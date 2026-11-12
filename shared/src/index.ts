@@ -51,29 +51,6 @@ export interface Photo {
   created_at: string
 }
 
-export interface PhotoVariant {
-  size: number
-  signature: string
-}
-
-/** POST /api/photos – begäran */
-export interface UploadPhotoRequest {
-  tourId: number
-  filename: string
-  width: number
-  height: number
-}
-
-/** POST /api/photos – svar från API + Azure Function (M7) */
-export interface UploadPhotoResponse extends Photo {
-  variants: PhotoVariant[]
-  processingMs: number
-  coldStart: boolean
-  instance: string
-  node?: string
-  apiMs: number
-}
-
 export interface Tour {
   id: number
   user_id: number
@@ -82,6 +59,35 @@ export interface Tour {
   started_at: string
   distance_m: number
   notes: string | null
+}
+
+/** POST /api/photos (M7) – klienten skickar bara mått och filnamn, inga bytes än */
+export interface PhotoUploadRequest {
+  tourId: number
+  filename: string
+  width: number
+  height: number
+}
+
+/** En omskalad variant: bredd i pixlar och bildsignaturen (för att hitta dubbletter) */
+export interface PhotoVariant {
+  size: number
+  signature: string
+}
+
+/** Svaret på POST /api/photos (M7): raden + det funktionen process-image räknade ut */
+export interface PhotoUploadResponse extends Photo {
+  variants: PhotoVariant[]
+  /** funktionens tid för själva bildarbetet */
+  processingMs: number
+  /** true = första anropet i en ny funktionsprocess */
+  coldStart: boolean
+  /** vilken funktionsinstans som svarade */
+  instance: string
+  /** Node-versionen funktionen kör på (skickas vidare av api/src/routes/photos.js) */
+  node?: string
+  /** API:ets tid för hela anropet: databasen + funktionen + nätet */
+  apiMs: number
 }
 
 /** GET /api/tours – varje tur med sina relationer inbakade */
@@ -105,36 +111,20 @@ export interface LoginRequest {
 }
 export interface LoginResponse {
   token: string
-  // OBS: i dag skickar API:et hela databasraden, inklusive password_hash.
-  // Typen säger User – verkligheten säger mer. TypeScript tar inte bort fält,
-  // det här är en säkerhetsskuld (skuld 9) som lagas i M8, inte här.
+  // M8: API:et skickar bara de här fälten (publicUser i api/src/lib/auth.js) – inte raden.
+  // Förut gick hela raden ut, med password_hash. TypeScript tar inte bort fält; koden gör det.
   user: User
 }
 
-/** Felsvar från API:et: { error: '...' } */
-export interface ApiError {
-  error: string
-}
-
+/** POST /api/auth/register */
 export interface RegisterRequest {
   email: string
   password: string
   displayName: string
 }
 
-export type RegisterResponse = LoginResponse
-
-export interface GuideSummary {
-  slug: string
-  title: string
-  region: string
-  difficulty: string
-  lengthKm: number
-}
-
-export interface HomeData {
-  guides: GuideSummary[]
-  popularGuides: Pick<GuideSummary, 'slug' | 'title' | 'region'>[]
-  regions: string[]
-  tours: { id: string; title: string; distanceM: number }[]
+/** Felsvar från API:et: { error: '...' }. Vid 400 från valideringen (M8) även vad som var fel, fält för fält. */
+export interface ApiError {
+  error: string
+  issues?: { path: string; message: string }[]
 }
