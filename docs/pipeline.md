@@ -70,7 +70,15 @@ Körs på både Pull Requests och pushes mot `main`:
    - `npm run migrate:logs`: Migrerar mätpunkter och GPS-loggar till MongoDB.
 4. **Integrationstester:** `npm run test:api` exekverar API- och GraphQL-testerna mot de körande databaserna.
 
-### 3. `build` (Byggkontroll)
+### 3. `security` (Säkerhet - M8)
+Körs på både Pull Requests och pushes mot `main`:
+1. **npm audit (SCA):** `npm audit --omit=dev --audit-level=high` kontrollerar att inga kända sårbarheter med allvarlighetsgrad High eller Critical finns bland produktionsberoendena.
+2. **Trivy repo (fs):** Skannar repot efter hårdkodade hemligheter, sårbarheter i `package-lock.json` och felkonfigurationer i Dockerfiles (`vuln,secret,misconfig`). Undantaget `DS-0002` (Nginx som startar som root i `client/Dockerfile`) är motiverat i [`.trivyignore`](../.trivyignore).
+3. **Bygge och start via Docker Compose:** Bygger imagerna och startar upp hela appen (`docker compose up -d --build --wait`) på samma sätt som i utvecklingsmiljön.
+4. **Trivy image:** Skannar den byggda imagen `utpost-api` mot OS-paket (Alpine), Node.js och installerade npm-paket med `severity: HIGH,CRITICAL`.
+5. **OWASP ZAP baseline (DAST):** Kör en dynamisk attackskanning mot den körande applikationen på `http://localhost:3001`. Kontrollerar att säkerhetsheaders (CSP, X-Content-Type-Options, X-Frame-Options) är satta och att ingen serverversion exponeras. Reglerna konfigureras i [`.zap/rules.tsv`](../.zap/rules.tsv) (regler 10038, 10021, 10020, 10036 är satta till `FAIL`).
+
+### 4. `build` (Byggkontroll)
 Körs på både Pull Requests och pushes mot `main`:
 1. Utför verifierande tester och kontroller.
 2. Bygger klientapplikationens produktionsfiler via `npm run build`.
@@ -140,6 +148,7 @@ Tiden ändras inte mätbart. React-klienten hade bara tre egna beroenden (`react
 |---|---|---|---|
 | **Kvalitet (`quality`)** | Lint, format, typecheck, enhetstester | Syntaxfel, formateringsfel, TypeScript-kontraktsbrott | ~1 min |
 | **Integration (`integration`)** | Kör integrationstester mot riktiga Postgres- och Mongo-databaser | Trasiga API-endpoints, SQL/Mongo-fel, DataLoader-regressioner | ~1 min |
+| **Säkerhet (`security`, M8)** | npm audit (SCA), Trivy fs/image, Docker Compose & OWASP ZAP baseline (DAST) | Sårbarheter i beroenden/OS, root-containers, saknade säkerhetsheaders, exponerade versioner | ~1–2 min |
 | **Bygg (`build`)** | Bygger Vue-klienten för produktion | Trasiga frontend-byggen | ~1 min |
 | **Image (`image`)** | Docker buildx & push till GHCR | Image-byggfel, saknade filer i container | ~1,5 min |
 | **Deploy (M6)** | `az containerapp update … --image …:sha-…` ×2 (api, client – två revisioner per deploy), vänta på `sha` i `/api/health` och på sista revisionen, röktest `/graphql` | En image som inte startar, en nginx-mall som inte renderas, en app som inte kommer upp – innan någon användare ser det | ~1,5 min (bara på `main`; väcks appen från noll tillkommer ~1 min) |

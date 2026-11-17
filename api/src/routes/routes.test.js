@@ -94,6 +94,20 @@ describe('A01 Broken Access Control – vems tur är det?', () => {
     expect((await pool.query('select id from tours where id = 1')).rows).toHaveLength(1);
   });
 
+  it('en medlem kan inte ändra någon annans tur (403)', async () => {
+    const tour = (await pool.query('select id, user_id from tours where id = 1')).rows[0];
+    const other = (
+      await pool.query("select id, email, role from users where id <> $1 and role = 'member' limit 1", [tour.user_id])
+    ).rows[0];
+    const res = await api(`/api/tours/${tour.id}`, {
+      method: 'PATCH',
+      token: sign(other),
+      body: { title: 'Obehörig ändring' },
+    });
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe('inte din tur');
+  });
+
   it('ägaren kan ta bort sin egen tur', async () => {
     const owner = await userRow(1);
     const created = await pool.query(
