@@ -33,6 +33,7 @@ services:
       retries: 10
 
   api:
+    image: utpost-api
     build:
       context: . # repots rot, inte api/ – Dockerfilen kopierar shared/ också
       dockerfile: api/Dockerfile
@@ -53,6 +54,7 @@ services:
         condition: service_healthy
 
   client:
+    image: utpost-client
     build:
       context: .
       dockerfile: client/Dockerfile
