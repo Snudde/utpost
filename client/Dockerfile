@@ -19,6 +19,7 @@ RUN npm run build --workspace=client
 FROM nginx:1.27-alpine
 
 COPY client/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY client/security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=build /app/client/dist /usr/share/nginx/html
 
 EXPOSE 80

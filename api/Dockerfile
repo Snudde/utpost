@@ -11,6 +11,8 @@ COPY shared/package.json shared/
 COPY api/package.json api/
 RUN npm ci --workspace=api --omit=dev
 
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
 # Sedan koden. Ändras ofta, ligger därför sist.
 COPY shared/ shared/
 COPY api/ api/
@@ -19,5 +21,7 @@ WORKDIR /app/api
 ARG GIT_SHA
 ENV GIT_SHA=$GIT_SHA
 EXPOSE 4000
+
+USER node
 # Node 22.18+ kör routes/guides.ts direkt – inget byggsteg behövs.
 CMD ["node", "src/boot.js"]

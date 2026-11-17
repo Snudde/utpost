@@ -1,0 +1,16 @@
+# ZAP baseline (M8): vilka regler som får göra jobbet Säkerhet rött (FAIL), bara varna (WARN) eller ignoreras (IGNORE).
+# Kolumner: regel-id	FAIL/WARN/IGNORE	kommentar. Regel-id:n: https://www.zaproxy.org/docs/alerts/
+10038	FAIL	Content Security Policy saknas – det är headern som gör XSS ofarlig (security-headers.conf)
+10021	FAIL	X-Content-Type-Options saknas
+10020	FAIL	Sidan får bäddas in i en iframe (frame-ancestors/X-Frame-Options saknas) – clickjacking
+10036	FAIL	Servern skriver ut sin version (server_tokens)
+10063	WARN	Permissions-Policy – bra att ha, inte ett stopp
+10098	WARN	Cross-Domain Misconfiguration (CORS) – vi har ingen CORS alls efter M8, varna om det kommer tillbaka
+10049	IGNORE	Storable and Cacheable Content – statiska filer får cachas, det är meningen (/assets/)
+10109	IGNORE	Modern Web Application – ZAP påpekar att det är en SPA
+10015	IGNORE	Re-examine Cache-control Directives – hanteras av Cache-Control per location
+10027	IGNORE	Information Disclosure – Suspicious Comments i byggda JS-filer
+90004	IGNORE	Insufficient Site Isolation Against Spectre (COOP/COEP) – utanför veckan
+10110	IGNORE	Dangerous JS Functions – falska träffar i Vue/urql-bundlen
+10094	IGNORE	Base64 Disclosure – en base64-sträng i den byggda bundlen (inbäddad bild/font), ingen hemlighet
+90005	IGNORE	Sec-Fetch-Dest Header is Missing – handlar om spindelns egna requests, inte om appen
