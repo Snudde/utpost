@@ -43,9 +43,9 @@ guidesRouter.get(
   validate(searchSchema, 'query'),
   wrap(async (req: Request, res: Response<Guide[]>) => {
     const { q } = (req as Request & { validQuery: { q: string } }).validQuery;
+    // SABOTAGE (A05): sökordet inklistrat i SQL-strängen igen
     const result = await pool.query<Guide>(
-      'select * from guides where title ilike $1 or region ilike $1 order by updated_at desc',
-      [`%${q}%`],
+      `select * from guides where title ilike '%${q}%' or region ilike '%${q}%' order by updated_at desc`,
     );
     res.json(result.rows);
   }),
