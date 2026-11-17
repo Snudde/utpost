@@ -1,0 +1,5 @@
+# Trivy-fynd vi medvetet låter vara (M8). Varje rad: id, och varför – och ett datum att titta igen.
+# DS-0002 i client/Dockerfile: nginx:alpine startar som root för att binda port 80 och byter själv till
+# användaren nginx för arbetsprocesserna (se master/worker i nginx-dokumentationen). api/Dockerfile har USER node.
+# Omprövas när vi går till produktion (nginx-unprivileged på 8080). /teamet, 2026-11-13
+DS-0002
