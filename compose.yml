@@ -33,7 +33,7 @@ services:
       retries: 10
 
   api:
-    image: utpost-api 
+    image: utpost-api
     build:
       context: . # repots rot, inte api/ – Dockerfilen kopierar shared/ också
       dockerfile: api/Dockerfile
