@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from 'cors';
 import { ZodError } from 'zod';
 import { config } from './config.js';
 import { pool } from './db/client.js';
@@ -14,8 +13,6 @@ import { yoga } from './graphql/server.js';
 // M8 (skuld 9): appen byggs här och startas i index.js. Då går den att testa utan att lyssna
 // på en fast port – routes.test.js startar den på en ledig port, anropar den och stänger den.
 export const app = express();
-
-app.use(cors());
 
 // GraphQL (M4): en endpoint bredvid REST-routerna. Ligger före express.json() – yoga läser sin egen body.
 app.use(yoga.graphqlEndpoint, yoga);

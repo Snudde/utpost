@@ -71,6 +71,11 @@ toursRouter.patch(
   wrap(async (req, res) => {
     const id = idParam.safeParse(req.params.id);
     if (!id.success) return res.status(400).json({ error: 'ogiltigt id' });
+    const tour = await pool.query('select id, user_id from tours where id = $1', [id.data]);
+    if (!tour.rows[0]) return res.status(404).json({ error: 'hittades inte' });
+    if (tour.rows[0].user_id !== req.user.id && req.user.role !== 'editor') {
+      return res.status(403).json({ error: 'inte din tur' });
+    }
     const { title, notes } = req.body;
     const result = await pool.query(
       `update tours set title = coalesce($1, title), notes = case when $2::boolean then $3 else notes end

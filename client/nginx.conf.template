@@ -2,16 +2,19 @@
 server {
   listen 80;
   root /usr/share/nginx/html;
+  server_tokens off; 
 
   # Vue Router sköter adresserna i browsern. /guider/kebnekaise finns inte som fil –
   # hittas ingen fil skickas index.html, och routern tar det därifrån.
   location / {
+    include /etc/nginx/security-headers.conf;
     try_files $uri $uri/ /index.html;
   }
 
   # Filerna i assets/ har en hash i namnet (index-S-W114i7.js). Nytt bygge = nytt namn,
   # så browsern får spara dem hur länge som helst.
   location /assets/ {
+    include /etc/nginx/security-headers.conf;
     expires 1y;
     add_header Cache-Control "public, immutable";
   }
@@ -19,9 +22,13 @@ server {
   # Browsern pratar bara med den här servern. Anrop till /api och /graphql skickas vidare
   # till tjänsten api inne i compose-nätverket – med tjänstnamnet, inte localhost.
   location /api/ {
+    include /etc/nginx/security-headers.conf;
+    add_header Cache-Control "no-store" always;   # M8: svar med token eller personuppgifter cachas aldrig
     proxy_pass http://${API_UPSTREAM};
   }
   location /graphql {
+    include /etc/nginx/security-headers.conf;
+    add_header Cache-Control "no-store" always;
     proxy_pass http://${API_UPSTREAM};
   }
 }
