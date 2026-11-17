@@ -72,59 +72,6 @@ jobs:
       - run: npm run migrate:logs  # mätpunkterna till Mongo – testet för Tour.logs kräver det
       - run: npm run test:api
 
-  security:
-    name: Säkerhet
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-
-      - name: Beroenden – npm audit (bara det som körs i produktion, high och critical)
-        run: npm audit --omit=dev --audit-level=high
-      - name: Repot – Trivy (beroenden, hemligheter, Dockerfiles)
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          scanners: vuln,secret,misconfig
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: '1'
-          trivyignores: .trivyignore
-
-      # Hela appen startas som i compose – det är den ZAP ska anropa, och api-imagen som Trivy ska skanna.
-      - name: Bygg imagerna och starta appen (compose)
-        run: docker compose up -d --build --wait
-
-      - name: "Imagen – Trivy (api-imagen: Alpine-paket, Node, npm-paket)"
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: image
-          image-ref: utpost-api
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: '1'
-          trivyignores: .trivyignore
-
-      - name: Appen – ZAP baseline (DAST) mot den körande appen
-        uses: zaproxy/action-baseline@v0.15.0
-        with:
-          target: 'http://localhost:3001'
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -I'
-          fail_action: true
-          allow_issue_writing: false
-          artifact_name: zap-rapport
-
-      - name: Loggar från appen (bara om något gick fel)
-        if: failure()
-        run: docker compose logs --tail 50 api client
-
-
   build:
     runs-on: ubuntu-latest
 
@@ -197,6 +144,59 @@ jobs:
           labels: ${{ steps.meta-client.outputs.labels }}
           cache-from: type=gha,scope=client
           cache-to: type=gha,mode=max,scope=client
+
+  security:
+    name: Säkerhet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Beroenden – npm audit (bara det som körs i produktion, high och critical)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Repot – Trivy (beroenden, hemligheter, Dockerfiles)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          trivyignores: .trivyignore
+
+      # Hela appen startas som i compose – det är den ZAP ska anropa, och api-imagen som Trivy ska skanna.
+      - name: Bygg imagerna och starta appen (compose)
+        run: docker compose up -d --build --wait
+
+      - name: "Imagen – Trivy (api-imagen: Alpine-paket, Node, npm-paket)"
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: utpost-api
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          trivyignores: .trivyignore
+
+      - name: Appen – ZAP baseline (DAST) mot den körande appen
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: 'http://localhost:3001'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -I'
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-rapport
+
+      - name: Loggar från appen (bara om något gick fel)
+        if: failure()
+        run: docker compose logs --tail 50 api client
+
 
   deploy:
       name: Deploy → Azure staging
@@ -346,3 +346,4 @@ jobs:
           echo "$SVAR"
           echo "$SVAR" | grep -q '"variants"' || { echo "::error::process-image svarade utan variants"; exit 1; }
           echo "✅ $URL svarar"
+
