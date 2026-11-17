@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { ApiError, LoginRequest, LoginResponse, RegisterRequest, User } from '@utpost/shared'
+import type { ApiError, LoginRequest, LoginResponse, User } from '@utpost/shared'
 import { post } from '../api'
 import { getToken, setToken } from '../lib/token'
 
@@ -19,19 +19,10 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = svar.user
   }
 
-  // Registrering loggar in direkt: API:et svarar med samma { token, user } som login
-  // (409 om e-posten redan finns, 400 om valideringen säger nej).
-  const register = async (details: RegisterRequest) => {
-    const svar = await post<LoginResponse | ApiError>('/auth/register', details)
-    if ('error' in svar) throw new Error(svar.error)
-    setToken(svar.token)
-    user.value = svar.user
-  }
-
   const logout = () => {
     setToken(null)
     user.value = null
   }
 
-  return { user, isLoggedIn, login, register, logout }
+  return { user, isLoggedIn, login, logout }
 })
