@@ -38,7 +38,8 @@ toursRouter.get(
 toursRouter.get(
   '/:id',
   wrap(async (req, res) => {
-    const id = { data: req.params.id }; // SABOTAGE (A10): ingen idParam – "abc" går rakt till Postgres
+    const id = idParam.safeParse(req.params.id);
+    if (!id.success) return res.status(400).json({ error: 'ogiltigt id' });
     const tour = await pool.query('select * from tours where id = $1', [id.data]);
     if (!tour.rows[0]) return res.status(404).json({ error: 'hittades inte' });
     const logs = await pool.query('select * from tour_logs where tour_id = $1 order by recorded_at', [id.data]);
@@ -72,7 +73,9 @@ toursRouter.patch(
     if (!id.success) return res.status(400).json({ error: 'ogiltigt id' });
     const tour = await pool.query('select id, user_id from tours where id = $1', [id.data]);
     if (!tour.rows[0]) return res.status(404).json({ error: 'hittades inte' });
-    // SABOTAGE (A01): ingen ägarkontroll – vilken inloggad som helst kan ändra vilken tur som helst
+    if (tour.rows[0].user_id !== req.user.id && req.user.role !== 'editor') {
+      return res.status(403).json({ error: 'inte din tur' });
+    }
     const { title, notes } = req.body;
     const result = await pool.query(
       `update tours set title = coalesce($1, title), notes = case when $2::boolean then $3 else notes end
