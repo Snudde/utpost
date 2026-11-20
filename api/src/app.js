@@ -8,6 +8,7 @@ import { guidesRouter } from './routes/guides.ts';
 import { toursRouter } from './routes/tours.js';
 import { photosRouter } from './routes/photos.js';
 import { usersRouter } from './routes/users.js';
+import { cmsRouter } from './routes/cms.js';
 import { yoga } from './graphql/server.js';
 
 // M8 (skuld 9): appen byggs här och startas i index.js. Då går den att testa utan att lyssna
@@ -46,6 +47,7 @@ app.use('/api/guides', guidesRouter);
 app.use('/api/tours', toursRouter);
 app.use('/api/photos', photosRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/cms', cmsRouter); // M9: webhooken från CMS:et
 
 // M8 (A10, Mishandling of Exceptional Conditions): ett fel ska bli ETT svar – 400 när det är
 // anroparens fel (valideringen), annars 500 utan detaljer. Förut svalde process.on('unhandledRejection')

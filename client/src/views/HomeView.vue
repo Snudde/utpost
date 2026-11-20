@@ -1,12 +1,30 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { useQuery } from '@urql/vue'
 import { graphql } from '../gql'
+import { useAuthStore } from '../stores/auth'
+import NoticeList from '../components/NoticeList.vue'
 
 // Startsidan i React-klienten (web/src/pages/Home.jsx) gör fem REST-anrop och använder
 // en bråkdel av svaren – skuld 6. Här är samma sida med EN fråga som ber om exakt de fält
 // som mallen nedan visar.
 const HOME_QUERY = graphql(`
-  query Home {
+  query Home($preview: Boolean) {
+    notices(preview: $preview) {
+      id
+      title
+      level
+      status
+      guideSlug
+      body {
+        runs {
+          text
+          bold
+          italic
+          href
+        }
+      }
+    }
     guides {
       slug
       title
@@ -28,7 +46,13 @@ const HOME_QUERY = graphql(`
   }
 `)
 
-const { data, error } = useQuery({ query: HOME_QUERY })
+const auth = useAuthStore()
+const isEditor = computed(() => auth.user?.role === 'editor')
+const showDrafts = ref(false)
+const preview = computed(() => isEditor.value && showDrafts.value)
+const variables = computed(() => ({ preview: preview.value }))
+const requestPolicy = computed(() => (preview.value ? 'network-only' : 'cache-first'))
+const { data, error } = useQuery({ query: HOME_QUERY, variables, requestPolicy })
 </script>
 
 <template>
@@ -39,6 +63,11 @@ const { data, error } = useQuery({ query: HOME_QUERY })
       <h1>Hitta din nästa tur</h1>
       <p>{{ data.guides.length }} guider i {{ data.regions.length }} landskap.</p>
     </section>
+
+    <label v-if="isEditor" class="muted">
+      <input v-model="showDrafts" type="checkbox" /> Förhandsgranska: visa utkast
+    </label>
+    <NoticeList :notices="data.notices" />
 
     <h2>Populärast just nu</h2>
     <ul class="list">

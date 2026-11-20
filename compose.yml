@@ -41,12 +41,17 @@ services:
       # Inne i compose-nätverket heter databaserna som tjänsterna: postgres och mongo, inte localhost.
       # Portarna är containrarnas egna (5432), inte de publicerade (5433).
       DATABASE_URL: postgres://utpost:utpost@postgres:5432/utpost
+      JWT_SECRET: ${JWT_SECRET:-} # M8 (H4): från .env (gitignorerad, se .env.example) – inget värde i repot. Saknas den startar inte api
       MONGO_URL: mongodb://utpost:utpost@mongo:27017/utpost?authSource=admin
       SEED_ON_START: "1"
       IMAGE_FUNCTION_URL: ${IMAGE_FUNCTION_URL:-http://host.docker.internal:7071/api/process-image}
       IMAGE_FUNCTION_KEY: ${IMAGE_FUNCTION_KEY:-}
     # Inga ports: browsern når API:et genom nginx i client (/api och /graphql skickas vidare
     # till api:4000 inne i nätverket). Felsöka API:et direkt? Lägg tillbaka  ports: - "4000:4000"
+      CONTENTFUL_SPACE_ID: ${CONTENTFUL_SPACE_ID:-}
+      CONTENTFUL_DELIVERY_TOKEN: ${CONTENTFUL_DELIVERY_TOKEN:-}
+      CONTENTFUL_PREVIEW_TOKEN: ${CONTENTFUL_PREVIEW_TOKEN:-}
+      CMS_WEBHOOK_SECRET: ${CMS_WEBHOOK_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy

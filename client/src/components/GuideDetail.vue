@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuery } from '@urql/vue'
 import { graphql } from '../gql'
+import NoticeList from './NoticeList.vue'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug ?? ''))
@@ -16,6 +17,20 @@ const GUIDE_QUERY = graphql(`
       difficulty
       lengthKm
       bodyHtml
+      notices {
+        id
+        title
+        level
+        status
+        body {
+          runs {
+            text
+            bold
+            italic
+            href
+          }
+        }
+      }
     }
   }
 `)
@@ -36,6 +51,7 @@ const guide = computed(() => data.value?.guide)
   <article v-else class="guide">
     <h1>{{ guide.title }}</h1>
     <p class="muted">{{ guide.region }} · {{ guide.difficulty }} · {{ guide.lengthKm }} km</p>
+    <NoticeList :notices="guide.notices" />
     <div v-html="guide.bodyHtml"></div>
   </article>
 </template>

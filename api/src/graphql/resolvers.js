@@ -15,6 +15,13 @@ export const resolvers = {
       (await query('select * from guides where slug = $1', [slug])).rows[0] ?? null,
     regions: async (_, args, { query }) =>
       (await query('select distinct region from guides order by region')).rows.map((r) => r.region),
+    notices: async (_, { preview }, { user, cms }) => {
+      if (!preview) return cms.notices();
+      if (user?.role !== 'editor') {
+        throw new GraphQLError('Förhandsgranskningen kräver rollen editor', { extensions: { code: 'FORBIDDEN' } });
+      }
+      return cms.previewNotices();
+    },
     tours: async (_, { limit }, { query }) =>
       (await query('select * from tours order by started_at desc limit $1', [Math.min(limit, 200)])).rows,
     tour: async (_, { id }, { query }) =>
@@ -41,6 +48,8 @@ export const resolvers = {
     bodyHtml: (guide) => guide.body_html,
     heroImage: (guide) => guide.hero_image,
     updatedAt: (guide) => iso(guide.updated_at),
+    notices: async (guide, args, { cms }) => (await cms.notices()).filter((notice) => notice.guideSlug === guide.slug),
+
   },
 
   User: {

@@ -7,6 +7,7 @@ import { mongo, mongoDb } from '../db/mongo.js';
 import { typeDefs } from './schema.js';
 import { resolvers } from './resolvers.js';
 import { createLoaders } from './loaders.js';
+import { publishedNotices, previewNotices } from '../cms/contentful.js';
 
 // Samma token som REST-routerna använder (lib/auth.js). Ingen token = user är null;
 // det är varje resolvers sak att avgöra om det räcker.
@@ -59,6 +60,8 @@ export const yoga = createYoga({
       mongoFind,
       // M5: loaders skapas PER ANROP. Två frågor i samma anrop delar cache, två anrop gör det inte.
       loaders: createLoaders({ query, mongoFind }),
+       // M9: CMS:et som en del av context, bredvid databasen. Resolvers vet inte vilket CMS det är.
+      cms: { notices: publishedNotices, previewNotices },
     };
   },
 });

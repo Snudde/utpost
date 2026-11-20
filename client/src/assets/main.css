@@ -1,5 +1,18 @@
 @import './base.css';
 
+.notice.varning {
+  color: #000;
+}
+
+.notice.info {
+  color: #000;
+}
+
+.notice.varning strong,
+.notice.info strong {
+  font-weight: bold;
+}
+
 #app {
   display: flex;
   width: 100vw;
