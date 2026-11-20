@@ -14,4 +14,20 @@ export const config = {
   // M7: adress och valfri funktionsnyckel till bildfunktionen (lokalt func start på 7071).
   imageFunctionUrl: process.env.IMAGE_FUNCTION_URL ?? 'http://localhost:7071/api/process-image',
   imageFunctionKey: process.env.IMAGE_FUNCTION_KEY ?? '',
+  cmsSpaceId: process.env.CONTENTFUL_SPACE_ID ?? '',
+  cmsEnvironment: process.env.CONTENTFUL_ENVIRONMENT ?? 'master',
+  cmsDeliveryToken: process.env.CONTENTFUL_DELIVERY_TOKEN ?? '',
+  cmsPreviewToken: process.env.CONTENTFUL_PREVIEW_TOKEN ?? '',
+  cmsCacheSeconds: Number(process.env.CMS_CACHE_SECONDS ?? 60),
+  cmsWebhookSecret: process.env.CMS_WEBHOOK_SECRET ?? '',
+
+};
+
+// En hemlighet som går att gissa är ingen hemlighet: kräv den, och kräv att den är lång.
+export const assertJwtSecret = () => {
+  const secret = config.jwtSecret ?? '';
+  if (secret.length < 32 || secret === 'utpost-dev-secret-byt-i-molnet') {
+    console.error('JWT_SECRET saknas eller är för kort (minst 32 tecken) – API:et startar inte. Generera: openssl rand -hex 32');
+    process.exit(1);
+  }
 };

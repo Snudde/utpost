@@ -14,6 +14,15 @@ const kebnekaise = {
   difficulty: 'svår',
   lengthKm: 18,
   bodyHtml: '<p>Sveriges tak</p>',
+  notices: [
+    {
+      id: 'n1',
+      title: 'Bron är avstängd',
+      level: 'varning',
+      status: 'published',
+      body: [{ runs: [{ text: 'Ta omvägen.', bold: false, italic: false, href: null }] }],
+    },
+  ],
 }
 
 const renderGuide = () => render(GuideDetail, { global: { plugins: [urqlPlugin()] } })
@@ -44,6 +53,12 @@ describe('GuideDetail', () => {
     expect(await screen.findByRole('heading', { name: 'Kebnekaise' })).toBeInTheDocument()
     expect(screen.getByText(/Lappland/)).toBeInTheDocument()
     expect(screen.getByText('Sveriges tak')).toBeInTheDocument()
+  })
+
+  it('visar guidens notiser från CMS:et', async () => {
+    renderGuide()
+    expect(await screen.findByRole('heading', { name: 'Bron är avstängd' })).toBeInTheDocument()
+    expect(screen.getByText('Ta omvägen.')).toBeInTheDocument()
   })
 
   it('visar ett fel när anropet misslyckas', async () => {

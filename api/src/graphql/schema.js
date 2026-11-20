@@ -13,6 +13,34 @@ export const typeDefs = /* GraphQL */ `
     heroImage: String
     published: Boolean!
     updatedAt: String!
+    "Redaktionens notiser som gäller just den här guiden (M9) – ur CMS:et, ihopkopplade här"
+    notices: [Notice!]!
+  }
+
+   "En textbit i ett stycke. Rich text som data: klienten bestämmer hur fet text och länkar ser ut."
+  type TextRun {
+    text: String!
+    bold: Boolean!
+    italic: Boolean!
+    "Vart textbiten länkar, om den är en länk"
+    href: String
+  }
+
+  type Paragraph {
+    runs: [TextRun!]!
+  }
+
+  "En notis från redaktionen. Innehållet bor i CMS:et (M9), inte i databasen."
+  type Notice {
+    id: ID!
+    title: String!
+    "info eller varning – vad notisen ÄR, inte vilken färg den har"
+    level: String!
+    body: [Paragraph!]!
+    "Vilken guide notisen gäller. Tom = gäller hela Utpost"
+    guideSlug: String
+    "published, draft eller changed. Annat än published syns bara i förhandsgranskningen"
+    status: String!
   }
 
   type User {
@@ -54,6 +82,8 @@ export const typeDefs = /* GraphQL */ `
     popularGuides(limit: Int = 6): [Guide!]!
     guide(slug: String!): Guide
     regions: [String!]!
+    "Redaktionens notiser. preview: true visar även utkast – kräver inloggning med rollen editor"
+    notices(preview: Boolean = false): [Notice!]!
     "Senaste turerna"
     tours(limit: Int = 50): [Tour!]!
     tour(id: ID!): Tour
