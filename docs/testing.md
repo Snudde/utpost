@@ -31,7 +31,21 @@ mätpunkter utan höjd som havsnivå (docs/debt.md).
 | shared/src/index.ts – API-kontrakt | Statisk | vue-tsc | Mockdata och komponenter följer kontraktet |
 | components/GuideCard.vue | Komponent (indirekt) | views/GuidesView.test.ts | Täcks via listan, inget eget test |
 | api/src/routes/* | Testas inte | – | Se "Medvetet inte" |
+| api/src/routes/cms.js – webhook | Integration | api/src/routes/cms.test.js | Bara rätt hemlighet tömmer CMS-cachen (204); fel, ingen eller osatt hemlighet ger 401 |
 | router/index.js | Testas inte | – | Se "Medvetet inte" |
+
+## Röda tester före fixen: webhooken (M9)
+Webhooken `POST /api/cms/webhook` fick sina tester i [PR #83](https://github.com/Snudde/utpost/pull/83). Den första commiten lade till testerna och tog bort monteringen av routen i `api/src/app.js`. Den andra satte tillbaka routen. Samma fyra tester gick från rött till grönt.
+
+| Testet i `api/src/routes/cms.test.js` | Utan routen | Med routen |
+|---|---|---|
+| med rätt hemlighet: 204 och cachen töms | 404 | 204 |
+| med fel hemlighet: 401 och cachen lämnas orörd | 404 | 401 |
+| utan hemlighet: 401 och cachen lämnas orörd | 404 | 401 |
+| är ingen hemlighet satt på servern går ingen in – inte ens med en tom header | 404 | 401 |
+
+- **Rött:** commit `61a2ffb`, [Integration-jobbet](https://github.com/Snudde/utpost/actions/runs/45419269064/job/138533979131)
+- **Grönt:** commit `acc9006`, i samma PR
 
 ## Regler
 - **Merge:** *En PR får mergas till main när CI-jobbet build (lint, format, typecheck, test, build) är grönt och minst en teammedlem har godkänt den. Det upprätthålls av rulesetet main-protection.*
