@@ -12,7 +12,8 @@ export const resolvers = {
     popularGuides: async (_, { limit }, { query }) =>
       (await query('select * from guides where published = true order by id desc limit $1', [limit])).rows,
     guide: async (_, { slug, preview }, { query }) => {
-      const row = (await query('select * from guides where slug = $1', [slug])).rows[0] ?? null
+      const row = (await query('select * from guides where slug = $1', [slug])).rows[0] ?? null;
+      return row ? { ...row, _preview: preview } : null;
     },
     regions: async (_, args, { query }) =>
       (await query('select distinct region from guides order by region')).rows.map((r) => r.region),
