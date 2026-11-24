@@ -11,8 +11,9 @@ export const resolvers = {
       (await query('select * from guides order by updated_at desc')).rows,
     popularGuides: async (_, { limit }, { query }) =>
       (await query('select * from guides where published = true order by id desc limit $1', [limit])).rows,
-    guide: async (_, { slug }, { query }) =>
-      (await query('select * from guides where slug = $1', [slug])).rows[0] ?? null,
+    guide: async (_, { slug, preview }, { query }) => {
+      const row = (await query('select * from guides where slug = $1', [slug])).rows[0] ?? null
+    },
     regions: async (_, args, { query }) =>
       (await query('select distinct region from guides order by region')).rows.map((r) => r.region),
     notices: async (_, { preview }, { user, cms }) => {
@@ -45,11 +46,19 @@ export const resolvers = {
   // Fältresolvers: översätter kolumnnamn till schemats namn.
   Guide: {
     lengthKm: (guide) => guide.length_km,
-    bodyHtml: (guide) => guide.body_html,
+    body: async (guide, { preview }, { cms, user }) => {
+      const isPreview = preview || guide._preview;
+      if (isPreview) {
+        if (user?.role !== 'editor') {
+          throw new GraphQLError('Förhandsgranskningen kräver rollen editor', { extensions: { code: 'FORBIDDEN' } });
+        }
+        return cms.previewGuideBody(guide.slug);
+      }
+      return cms.publishedGuideBody(guide.slug);
+    },
     heroImage: (guide) => guide.hero_image,
     updatedAt: (guide) => iso(guide.updated_at),
     notices: async (guide, args, { cms }) => (await cms.notices()).filter((notice) => notice.guideSlug === guide.slug),
-
   },
 
   User: {

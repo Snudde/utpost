@@ -45,10 +45,35 @@ export const toParagraphs = (document) => {
       if (node.nodeType === 'hyperlink') return runs(node.content, safeHref(node.data?.uri));
       return [];
     });
-  return (document?.content ?? [])
-    .filter((node) => node.nodeType === 'paragraph')
-    .map((node) => ({ runs: runs(node.content) }))
-    .filter((paragraph) => paragraph.runs.length > 0);
+  return (document?.content ?? []).flatMap((node) => {
+    if (node.nodeType === 'paragraph') {
+      const r = runs(node.content);
+      return r.length > 0 ? [{ runs: r }] : [];
+    }
+    if (node.nodeType === 'header-2' || node - nodeType === 'header-3') {
+      const r = runs(node.content);
+      return r.length > 0 ? [{ runs: r }] : [];
+    }
+    if (node.nodeType === 'unordered-list') {
+      return (node.content ?? []).flatMap((item) => {
+        // En list-item i Contentful innehåller vanligtvis ett paragraph-block
+        return (item.content ?? []).flatMap((p) => {
+          const itemRuns = runs(p.content);
+          if (itemRuns.length === 0) return [];
+          return [
+            {
+              runs: [
+                { text: '• ', bold: false, italic: false, href: null },
+                ...itemRuns,
+              ],
+            },
+          ];
+        });
+      });
+    }
+    // Blocktyper vi inte känner till hoppas över
+    return [];
+  });
 };
 
 // Contentfuls post → schemats Notice. Fälten heter som redaktionen kallar dem (rubrik, niva);
@@ -65,10 +90,12 @@ const toNotice = (entry, status = 'published') => ({
 // Cachen: Contentful räknar varje anrop (gratisnivån har ett tak per månad), och en notis ändras
 // några gånger i veckan – inte 50 gånger i sekunden. Därför hämtar vi högst en gång i minuten och
 // svarar ur minnet däremellan. Priset: en publicerad ändring syns efter upp till en minut.
-let cache = { at: 0, notices: null };
-let pending = null; // anropet till Contentful som pågår just nu, om något gör det
+let cache = { at: 0, notices: null, guidesBySlug: null };
+let pendingNotices = null;
+let pendingGuides = null;
+
 export const clearCmsCache = () => {
-  cache = { at: 0, notices: null };
+  cache = { at: 0, notices: null, guidesBySlug: null };
 };
 
 const fetchNotices = async () => {
@@ -91,8 +118,8 @@ export const publishedNotices = async () => {
   // En lista med 40 guider frågar efter notiser 40 gånger på samma gång (Guide.notices). Med kall
   // cache ska det bli ETT anrop till Contentful, inte 40: alla som frågar medan anropet pågår
   // väntar på samma svar.
-  pending ??= fetchNotices().finally(() => {
-    pending = null;
+  pendingNotices ??= fetchNotices().finally(() => {
+    pendingNotices = null;
   });
   return pending;
 };
@@ -109,4 +136,52 @@ export const previewNotices = async () => {
     const status = live === undefined ? 'draft' : live === JSON.stringify(entry.fields) ? 'published' : 'changed';
     return toNotice(entry, status);
   });
+};
+
+const fetchGuides = async () => {
+  try {
+    const items = await entries('guide');
+    // Mappa upp varje guide på dess slug: slug -> toParagraphs(entry.fields.text)
+    const guidesBySlug = new Map(
+      items.map((entry) => [
+        entry.fields?.slug,
+        toParagraphs(entry.fields?.text)
+      ])
+    );
+    console.log(`cms: hämtade ${guidesBySlug.size} guider från Contentful`);
+    cache = { ...cache, at: Date.now(), guidesBySlug };
+    return guidesBySlug;
+  } catch (err) {
+    console.error(`cms: kunde inte hämta guider (${err.message})`);
+    return cache.guidesBySlug ?? new Map();
+  }
+};
+
+
+export const publishedGuideBody = async (slug) => {
+  if (!cmsConfigured()) return [];
+  if (cache.guidesBySlug && Date.now() - cache.at < config.cmsCacheSeconds * 1000) {
+    return cache.guidesBySlug.get(slug) ?? [];
+  }
+
+  pendingGuides ??= fetchGuides().finally(() => {
+    pendingGuides = null;
+  });
+
+  const guides = await pendingGuides
+  return guides.get(slug) ?? [];
+};
+
+export const previewGuideBody = async (slug) => {
+  if (!config.cmsSpaceId || !config.cmsPreviewToken) return [];
+
+  try {
+    // Hämtar senaste versionen (även utkast) från Contentfuls preview-API. Cachas aldrig!
+    const items = await entries('guide', { preview: true });
+    const guide = items.find((entry) => entry.fields?.slug === slug);
+    return toParagraphs(guide?.fields?.text);
+  } catch (err) {
+    console.error(`cms: kunde inte förhandsgranska guide ${slug} (${err.message})`);
+    return [];
+  }
 };

@@ -9,7 +9,7 @@ export const typeDefs = /* GraphQL */ `
     region: String!
     difficulty: String!
     lengthKm: Float!
-    bodyHtml: String!
+    body(preview: Boolean = false): [Paragraph!]! 
     heroImage: String
     published: Boolean!
     updatedAt: String!
@@ -80,7 +80,7 @@ export const typeDefs = /* GraphQL */ `
     guides: [Guide!]!
     "Publicerade guider, nyast först – det startsidan kallar populärast"
     popularGuides(limit: Int = 6): [Guide!]!
-    guide(slug: String!): Guide
+    guide(slug: String!, preview: Boolean = false): Guide
     regions: [String!]!
     "Redaktionens notiser. preview: true visar även utkast – kräver inloggning med rollen editor"
     notices(preview: Boolean = false): [Notice!]!
