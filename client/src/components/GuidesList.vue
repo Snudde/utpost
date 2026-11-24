@@ -17,7 +17,6 @@ const GUIDES_QUERY = /* GraphQL */ `
       region
       difficulty
       lengthKm
-      bodyHtml
     }
   }
 `
@@ -29,7 +28,6 @@ onMounted(async () => {
     guides.value = data.guides.map((g) => ({
       ...g,
       length_km: g.lengthKm,
-      body_html: g.bodyHtml,
     }))
   } catch (err) {
     error.value = err.message

@@ -57,9 +57,25 @@ describe('rich text → stycken av textbitar', () => {
   });
 
   it('blocktyper vi inte renderar hoppas över, och ett tomt fält ger inga stycken', () => {
-    const rubrik = { nodeType: 'heading-2', data: {}, content: [text('Rubrik')] };
-    expect(toParagraphs(document(rubrik, paragraph(text('Stycke'))))).toHaveLength(1);
+    const okand = { nodeType: 'blockquote', data: {}, content: [text('Citat')] };
+    expect(toParagraphs(document(okand, paragraph(text('Stycke'))))).toHaveLength(1);
     expect(toParagraphs(undefined)).toEqual([]);
+  });
+
+  it('rubriker blir fetstilta och punktlistor får en punkt', () => {
+    const h2 = { nodeType: 'heading-2', data: {}, content: [text('Rubrik')] };
+    const ul = {
+      nodeType: 'unordered-list',
+      data: {},
+      content: [
+        { nodeType: 'list-item', data: {}, content: [paragraph(text('Punkt 1'))] },
+      ],
+    };
+    const paragraphs = toParagraphs(document(h2, ul));
+    expect(paragraphs).toHaveLength(2);
+    expect(paragraphs[0].runs[0]).toEqual({ text: 'Rubrik', bold: true, italic: false, href: null });
+    expect(paragraphs[1].runs[0].text).toBe('• ');
+    expect(paragraphs[1].runs[1].text).toBe('Punkt 1');
   });
 });
 
@@ -97,7 +113,7 @@ describe('publicerade notiser', () => {
   });
 
   it('är CMS:et nere svarar vi med det senast hämtade, eller en tom lista – aldrig ett fel', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => { });
     const nere = vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) }));
     vi.stubGlobal('fetch', nere);
     expect(await publishedNotices()).toEqual([]);

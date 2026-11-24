@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useQuery } from '@urql/vue'
 import { graphql } from '../gql'
 import NoticeList from './NoticeList.vue'
+import RichText from './RichText.vue'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug ?? ''))
@@ -16,7 +17,14 @@ const GUIDE_QUERY = graphql(`
       region
       difficulty
       lengthKm
-      bodyHtml
+      body {
+        runs {
+          text
+          bold
+          italic
+          href
+        }
+      }
       notices {
         id
         title
@@ -52,6 +60,6 @@ const guide = computed(() => data.value?.guide)
     <h1>{{ guide.title }}</h1>
     <p class="muted">{{ guide.region }} · {{ guide.difficulty }} · {{ guide.lengthKm }} km</p>
     <NoticeList :notices="guide.notices" />
-    <div v-html="guide.bodyHtml"></div>
+    <RichText :paragraphs="guide.body" />
   </article>
 </template>

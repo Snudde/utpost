@@ -18,6 +18,7 @@
     "mat": "node scripts/mat-upload.mjs",
     "cms:setup": "node --env-file-if-exists=.env scripts/cms-setup.mjs",
     "lint": "npm run lint --workspace=client",
+    "cms:migrate-guides": "node --env-file-if-exists=.env scripts/migrate-guides.mjs",
     "format": "npm run format --workspace=client",
     "format:check": "npm run format:check --workspace=client",
     "test": "npm run test --workspace=client",
