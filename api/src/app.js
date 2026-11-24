@@ -47,7 +47,6 @@ app.use('/api/guides', guidesRouter);
 app.use('/api/tours', toursRouter);
 app.use('/api/photos', photosRouter);
 app.use('/api/users', usersRouter);
-app.use('/api/cms', cmsRouter); // M9: webhooken från CMS:et
 
 // M8 (A10, Mishandling of Exceptional Conditions): ett fel ska bli ETT svar – 400 när det är
 // anroparens fel (valideringen), annars 500 utan detaljer. Förut svalde process.on('unhandledRejection')
