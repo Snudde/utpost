@@ -4,7 +4,8 @@
 
 ## Beslut
 Vi testar logik med enhetstester och användarflöden i klienten med komponenttester
-(Vitest + Vue Testing Library). API:et mockas på fetch-nivå. Alla kontroller körs i CI
+(Vitest + Vue Testing Library). I klienten mockas API:et på fetch-nivå. API:et testas
+med integrationstester mot riktiga databaser (Postgres och MongoDB). Alla kontroller körs i CI
 och måste vara gröna innan merge till main.
 
 ## Bakgrund
@@ -17,6 +18,7 @@ mätpunkter utan höjd som havsnivå (docs/debt.md).
 | Statisk | ESLint, Prettier, vue-tsc | Oanvända variabler, fel typer, kontraktsbrott mot shared/ |
 | Enhet | Vitest | Ren logik i client/src/lib/ |
 | Komponent | Vitest + Vue Testing Library + jsdom | Det användaren ser och gör |
+| Integration (API) | Vitest + fetch mot appen på en ledig port, riktig Postgres och MongoDB (compose lokalt, services i CI-jobbet Integration) | Behörighet, validering, felhantering och databasfrågor genom hela API:et |
 | E2E | – (se "Medvetet inte") | |
 
 ## Karta: vad testas var
@@ -30,7 +32,11 @@ mätpunkter utan höjd som havsnivå (docs/debt.md).
 | components/GuideDetail.vue – visning | Komponent | components/GuideDetail.test.ts | Titel, region och brödtext visas |
 | shared/src/index.ts – API-kontrakt | Statisk | vue-tsc | Mockdata och komponenter följer kontraktet |
 | components/GuideCard.vue | Komponent (indirekt) | views/GuidesView.test.ts | Täcks via listan, inget eget test |
-| api/src/routes/* | Testas inte | – | Se "Medvetet inte" |
+| api/src/routes/* – säkerhet (OWASP) | Integration | api/src/routes/routes.test.js | Inloggning (A07), ägar- och rollkontroll (A01), ingen CORS (A02), parametriserad sökning (A05), 400 i stället för 500 vid trasig indata (A10) |
+| api/src/routes/tours.js – radering | Integration | api/src/routes/tours.test.js | Ingen radering utan token (skuld #3) |
+| api/src/routes/photos.js – uppladdning | Integration | api/src/routes/photos.test.js | Bildfunktionen anropas bara för rätt ägare och giltig indata; 401/403/400/502 utan att spara något |
+| api/src/graphql/* | Integration | api/src/graphql/server.test.js | DataLoader (2 frågor, inte 51), UNAUTHENTICATED utan token, mätpunkter från MongoDB |
+| api/src/cms/contentful.js | Enhet (fetch mockad) | api/src/cms/contentful.test.js | Rich text till stycken, säkra länkar, cache och delat anrop, utkast/ändrad i preview, tom lista när CMS:et är nere |
 | api/src/routes/cms.js – webhook | Integration | api/src/routes/cms.test.js | Bara rätt hemlighet tömmer CMS-cachen (204); fel, ingen eller osatt hemlighet ger 401 |
 | router/index.js | Testas inte | – | Se "Medvetet inte" |
 
@@ -55,7 +61,8 @@ Webhooken `POST /api/cms/webhook` fick sina tester i [PR #83](https://github.com
 - **Meningsfullt test:** *Ett test ska bli rött om buggen det skyddar mot kommer tillbaka. Vi kontrollerar det genom att ta sönder koden med flit när testet skrivs.*
 
 ## Medvetet inte
-- *API:et (api/) – Testas inte i detta skede då backend är relativt stabil och fokus ligger helt på migrationen till Vue-klienten. Integrations- eller kontraktstester för API:et införs när klientomskrivningen är driftsatt eller om backend-logiken byggs ut väsentligt.*
+- *Kontraktstester mellan klient och API – klientens mockdata typas med shared/ och GraphQL-frågorna typkontrolleras med codegen. Ett separat kontraktstest (t.ex. Pact) är inte värt det med ett API och en klient i samma repo.*
+- *Contentful på riktigt – CMS-lagret testas med mockad fetch. Att space, nycklar och webhook fungerar kontrolleras i staging, inte i CI (inga CMS-hemligheter i pipelinen).*
 - *web/ – ska ersättas av client/.*
 - *Routerns konfiguration och Vues egna funktioner – det testar Vue-teamet.*
 - *CSS och utseende - Visuella regressionstester är för sköra och underhållstunga i tidiga migrationsfaser. Vi verifierar tillgängliga element, texter och interaktioner via DOM-strukturen.*
@@ -74,5 +81,6 @@ Webhooken `POST /api/cms/webhook` fick sina tester i [PR #83](https://github.com
   - Hög refaktoreringssäkerhet i `client/` då komponenttester baseras på användarbeteende, inte implementationsdetaljer.
   - Delade TypeScript-typer i `shared/` säkerställer att frontend-mockarna förblir i synk med förväntade datamodeller.
 - **Dåligt / risker vi accepterar:**
-  - API:et kan gå sönder utan att något test blir rött (eftersom fetch mockas och backend saknar full täckning).
+  - Klientens tester fångar inte ett API som ändrat beteende (fetch mockas). API:ets integrationstester täcker säkerhet, validering och de viktigaste flödena, men inte varje route.
+  - Integrationstesterna kräver databaserna igång (`docker compose up -d postgres mongo`) och delar data – de körs därför efter varandra, inte parallellt.
   - Webbläsarspecifika rendering- eller layoutbuggar fångas inte i jsdom.
