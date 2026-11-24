@@ -13,7 +13,11 @@ const kebnekaise = {
   region: 'Lappland',
   difficulty: 'svår',
   lengthKm: 18,
-  bodyHtml: '<p>Sveriges tak</p>',
+  body: [
+    {
+      runs: [{ text: 'Sveriges tak', bold: false, italic: false, href: null }],
+    },
+  ],
   notices: [
     {
       id: 'n1',

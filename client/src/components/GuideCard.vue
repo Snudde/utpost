@@ -17,7 +17,7 @@ defineProps({
     <p class="muted">
       {{ guide.region }} · {{ guide.difficulty }} · {{ guide.lengthKm ?? guide.length_km }} km
     </p>
-    <div class="excerpt" v-html="(guide.bodyHtml ?? guide.body_html ?? '').slice(0, 180)" />
+    <div class="excerpt"> {{(guide.bodyHtml ?? guide.body_html ?? '').slice(0, 180)}} </div>
   </div>
 </template>
 

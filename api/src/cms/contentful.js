@@ -121,7 +121,7 @@ export const publishedNotices = async () => {
   pendingNotices ??= fetchNotices().finally(() => {
     pendingNotices = null;
   });
-  return pending;
+  return pendingNotices;
 };
 
 // Förhandsgranskningen: preview-API:et ger senaste versionen av allt. Vi hämtar det publicerade
