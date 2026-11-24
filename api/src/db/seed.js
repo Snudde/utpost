@@ -11,11 +11,20 @@ const LAST = ['Berg', 'Lind', 'Ek', 'Nord', 'Sund', 'Holm', 'Falk', 'Ahlgren', '
 const rnd = (n) => Math.floor(Math.random() * n);
 const pick = (arr) => arr[rnd(arr.length)];
 
-const bodyHtml = (title, region) => `
+// M9: guiderna är FASTA – samma index ger alltid samma titel, slug, region och text. Guidens
+// brödtext bor i Contentful och kopplas till raden här via slug. Slumpade slugs gav varje databas
+// (lokalt, och staging som seedar om vid varje kallstart) egna guider som inte fanns i CMS:et.
+// Användare, turer och mätpunkter får vara slumpade – de kopplas till guiderna via id, inte slug.
+const PREFIX = ['Stora', 'Lilla', 'Norra', 'Södra', 'Gamla'];
+const TRAIL = ['Björnleden', 'Hällstigen', 'Sjörundan', 'Myrleden', 'Klippstigen'];
+export const guideTitle = (i) => `${PREFIX[i % PREFIX.length]} ${TRAIL[Math.floor(i / PREFIX.length) % TRAIL.length]} ${i + 1}`;
+export const guideSlug = (title) => title.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/\s+/g, '-');
+
+const bodyHtml = (title, region, i) => `
 <h2>Om ${title}</h2>
 <p>En av de mest omtyckta lederna i ${region}. Passar bra från maj till oktober.</p>
 <h3>Så tar du dig hit</h3>
-<p>Buss ${100 + rnd(400)} från centralorten, cirka ${20 + rnd(60)} minuter. Parkering finns vid leden.</p>
+<p>Buss ${100 + ((i * 53) % 400)} från centralorten, cirka ${20 + ((i * 17) % 60)} minuter. Parkering finns vid leden.</p>
 <h3>Bra att veta</h3>
 <ul><li>Vindskydd vid halva sträckan</li><li>Ingen service utmed leden</li><li>Mobiltäckning delvis</li></ul>
 <p><em>Senast granskad av redaktionen.</em></p>`.trim();
@@ -44,15 +53,15 @@ export const seed = async () => {
 
   const guideIds = [];
   for (let i = 0; i < 40; i++) {
-    const region = pick(REGIONS);
-    const title = `${pick(['Stora', 'Lilla', 'Norra', 'Södra', 'Gamla'])} ${pick(['Björnleden', 'Hällstigen', 'Sjörundan', 'Myrleden', 'Klippstigen'])} ${i + 1}`;
+    const region = REGIONS[(i * 3) % REGIONS.length];
+    const title = guideTitle(i);
     const res = await pool.query(
       `insert into guides (slug, title, region, difficulty, length_km, body_html, hero_image, published, author_id)
        values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`,
       [
-        title.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/\s+/g, '-'), title, region, pick(DIFFICULTY),
-        Math.round((3 + Math.random() * 25) * 10) / 10,
-        bodyHtml(title, region), `hero-${i + 1}.jpg`, i % 9 !== 0, userIds[0],
+        guideSlug(title), title, region, DIFFICULTY[i % DIFFICULTY.length],
+        Math.round((3 + ((i * 37) % 250) / 10) * 10) / 10,
+        bodyHtml(title, region, i), `hero-${i + 1}.jpg`, i % 9 !== 0, userIds[0],
       ],
     );
     guideIds.push(res.rows[0].id);
