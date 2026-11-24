@@ -50,8 +50,8 @@ export const toParagraphs = (document) => {
       const r = runs(node.content);
       return r.length > 0 ? [{ runs: r }] : [];
     }
-    if (node.nodeType === 'header-2' || node - nodeType === 'header-3') {
-      const r = runs(node.content);
+    if (node.nodeType === 'heading-2' || node.nodeType === 'heading-3') {
+      const r = runs(node.content).map((run) => ({ ...run, bold: true }));
       return r.length > 0 ? [{ runs: r }] : [];
     }
     if (node.nodeType === 'unordered-list') {
