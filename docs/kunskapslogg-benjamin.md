@@ -144,6 +144,43 @@ Hur man sätter upp managed databaser i en riktig produktionsmiljö och hur man 
 
 Hur man gör flödet helt asynkront med en kö när användaren inte behöver vänta på svaret direkt, samt hur man sätter upp övervakning och larm i Azure.
 
+### M8 Vecka 46 – Ut ur request-tråden 
+
+**Kursmål: Cloud 2, 12** 
+
+### Vad jag förstått
+
+**Cloude 2, 12:** Förstått skillnaden med att testa en applikation lokalt och att testa den efter självaste bygget och varför det är viktigt att göra tester på applikationen under en faktisk körmiljö. Fått djupare för hur alla jobb i pipelinen hör ihop och är synkade till varandra. Även fått kunskaper inom verktyg för att göra dessa tester ex. ZAP. Förstått OWASP och vikten i att följa dessa regler. 
+
+### Var det syns i mitt arbete
+
+**Branches jag jobbat i:** "labb-into-utpost"
+
+### Kvar att förstå
+
+Fördjupa mig i innebörden av riskerna i OWASP. Har lite ytlig kunskap just nu.
+
+### M9 Vecka 47 – Innehållet ut ur databasen 
+
+**Kursmål: Fullstack 9, 18, Cloud 12** 
+
+### Vad jag förstått
+
+**Fullstack 9, 18:** Har lärt mig innebörden av headless CMS och när man vill använda det. Fått kunskap i hur man migrerar data från databas till headless CMS och gör den redigerbar med hjälp av rich text.   
+
+**Cloude 12:** Konfigurerat en staging miljö i Azure Container Apps så att api-containern kan prata med Contentful och ta emot webhooks utan att nycklarna behöver läggas till i Git.
+
+### Var det syns i mitt arbete
+
+**Branches jag jobbat i:** "guides-contentful" 
+
+### Kvar att förstå
+
+Få mer förståelse för hur man kopplar data till contentful i mer komplexa scenarier och bli bättre på alla migreringssteg som vi lärt oss.
+
+
+
+
 
 
 
